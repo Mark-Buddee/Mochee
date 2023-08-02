@@ -1,0 +1,57 @@
+Problems:
+
+TODO:
+    -Detect checks                                          ✓
+    -Detect double checks                                   ✓
+    -Only generate appropriate responses to checks          ✓
+    -Don't allow pinned pieces to move                      ✓
+
+Improvements:
+    Max evaluation within search
+        if score is infinite, stop searching! there is a shorter checkmate.
+        Work out infinite scores i guess
+
+    typedef short int Move;
+
+    Put helper function definitions in header files
+
+    Delete /inc and move files to /Mochee
+
+    A types.h file wouldn't be bad
+
+    Variable naming
+        -gen_pawn_moves() should have better variable names
+        -rename piece_type to piece
+        -rename gen.h and gen.c psh is
+
+    Being pedantic about speed
+        -Converting sq to BIT can be done with a look up table
+        -Making Board a global variable?
+
+    Portability
+        -LSB() uses a gcc compiler specific instruction
+        -Upload to git, allow others to compile it
+
+    Loading screen
+        -fkn sick
+        -system("cls") clears whole screen, not line
+        -printf("\x1b[H") Regex for whole page; does not clear lines, only allows for overwrite
+        -printf("\033[F") Regex for line; goes to beginning of previous line
+
+    Error messages
+        -Add error messages for unrecognised fen strings in board_init
+
+    Code size
+        -Change buffer size to 64 in tgui. Consider length of fen string
+    
+    Readability
+        -Use _Bool instead of int
+
+
+Eval ideas:
+    King Tropism
+        -a table, usually written dynamically, that indicates king safety
+        -adds up the score of the squares around the king based upon how many times they are attacked and defended
+
+Design limitations:
+    Only works with one king of each colour on the board
