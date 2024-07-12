@@ -14,6 +14,8 @@
 #include "inc/magic.h"
 #include "inc/tt.h"
 
+// Hello Github!
+
 
 int main(void) {
     print_version();
