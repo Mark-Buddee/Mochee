@@ -10,22 +10,32 @@
 #include "inc/tt.h"
 #include "inc/tgui.h"
 
-void do_move(Board_s* const Board, const Move move) {
-    int src = SRC(move);
-    int dst = DST(move);
-    int ppt = PPT(move);
-    int spc = SPC(move);
+void do_move(Board_s* const Board, const Move Move) {
+    assert(Move != NULL_MOVE);
+    int src = SRC(Move);
+    int dst = DST(Move);
+    int ppt = PPT(Move);
+    int spc = SPC(Move);
     int cpt  = Board->pieces[dst];
     int mvd  = Board->pieces[src];
     int side = Board->side;
     int originalCastlingRights = Board->castlingRights;
 
+    // assert(cpt != KING);
+    // if(cpt == KING) {
+    //     undo_move(Board);
+    //     print_detailed(Board, Board->side);
+    //     undo_move(Board);
+    //     print_detailed(Board, Board->side);
+    // }
+
     // Undo
-    Undo_s Undo = {move, cpt, Board->castlingRights, Board->hundredPly, Board->enPas, Board->staticEval, Board->key};
+    Undo_s Undo = {Move, cpt, Board->castlingRights, Board->hundredPly, Board->enPas, Board->checkers, .kingBlockers[WHITE] = Board->kingBlockers[WHITE], .kingBlockers[BLACK] = Board->kingBlockers[BLACK], Board->staticEval, Board->key};
     Board->Undos[Board->hisPly] = Undo;
 
     // Static evaluation
-    Board->staticEval += move_eval(Board, move);
+    // assert(Move->)
+    Board->staticEval += move_eval(Board, Move);
 
     // Regular piece movement
     if(cpt) remove_piece(Board, cpt, dst, !side);
@@ -53,7 +63,7 @@ void do_move(Board_s* const Board, const Move move) {
     if(cpt == ROOK && corner_to_castle[dst])      Board->castlingRights &= ~corner_to_castle[dst];
 
     if(Board->enPas) Board->key ^= zobrist_enpSq[lsb(Board->enPas)];
-    if(mvd == PAWN && vert_dist(dst, src) == 2) { // TODO: quicken >:)
+    if(mvd == PAWN && abs(dst - src) == 16) {
         Board->enPas = enp_sq[dst];
         Board->key ^= zobrist_enpSq[dst];
     } else Board->enPas = 0ULL; // no zobrist key change assosciated with this
@@ -67,7 +77,7 @@ void do_move(Board_s* const Board, const Move move) {
     }
 
     // Update check metadata
-    update_check_data(Board, move, mvd, 0);
+    update_check_data(Board, Move, mvd);
 }
 
 void undo_move(Board_s* const Board) {
@@ -100,23 +110,20 @@ void undo_move(Board_s* const Board) {
     Board->castlingRights = Board->Undos[newHisPly].castlingRights;
     Board->hundredPly = Board->Undos[newHisPly].hundredPly;
     Board->enPas = Board->Undos[newHisPly].enPas;
+    Board->checkers = Board->Undos[newHisPly].checkers;
+    Board->kingBlockers[WHITE] = Board->Undos[newHisPly].kingBlockers[WHITE];
+    Board->kingBlockers[BLACK] = Board->Undos[newHisPly].kingBlockers[BLACK];
     Board->staticEval = Board->Undos[newHisPly].staticEval;
     Board->side = !Board->side;
     Board->key = Board->Undos[newHisPly].key;
-    //Board->key ^= zobrist_blackToMove;
 
-    // Update check metadata
-    update_check_data(Board, move, mvd, 1);
+    // // Update check metadata
+    // U64 srcDst64 = BIT(src) | BIT(dst);
+    // if(srcDst64 & Board->checkSquares[side][QUEEN])
+    //     update_checkSquares(Board, side);
+    // if(mvd == KING)
+    //     update_checkSquares(Board, !side);
+    // else if(srcDst64 & Board->checkSquares[!side][QUEEN])
+    //     update_checkSquares(Board, !side);
 
-    // if(finalCastlingRights != Board->castlingRights) {
-    //     Board->key ^= zobrist_castle[finalCastlingRights];
-    //     Board->key ^= zobrist_castle[Board->castlingRights];
-    // }
-    // if(finalEnPas) Board->key ^= zobrist_enpSq[lsb(finalEnPas)];
-    // if(Board->enPas) Board->key ^= zobrist_enpSq[lsb(Board->enPas)];
-
-    assert(Board->Undos[newHisPly].key == Board->key);
 }
-
-
-

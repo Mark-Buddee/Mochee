@@ -73,7 +73,7 @@ int fen_sq(const char* fenSq) {
 
 U64 fen_enPas(const char* fenEnPas) {
     assert(fenEnPas != NULL);
-    if(!strcmp(fenEnPas, "-")) return OFFBOARD;
+    if(!strcmp(fenEnPas, "-")) return 0;
 
     assert(strlen(fenEnPas) >= 2);
     return BIT(fen_sq(fenEnPas));

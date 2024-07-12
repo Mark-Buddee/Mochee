@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <math.h>
+#include <assert.h>
 #include "inc/defs.h"
 #include "inc/board.h"
 #include "inc/gen.h"
@@ -62,36 +63,51 @@ void init_check_data(Board_s* const Board) {
     update_kingBlockers(Board, BLACK);
 }
 
-void update_check_data(Board_s* const Board, const Move move, const int mvd, const int isUndo) {
-    int side = Board->side;
+// We may not have a king
+// Either side may unknowingly be in check
+// Function is to only be called within do_move as Board->side is opposite to convention
+// kingBlockers and checkers are NOT valid during Qsearch
+void update_check_data(Board_s* const Board, const Move move, const int mvd) {
+    int side = Board->side; // we investigate if side is in check. !side has just moved
     int src = SRC(move);
     int dst = DST(move);
     int spc = SPC(move);
     int ppt = PPT(move);
+
     U64 srcDst64 = BIT(src) | BIT(dst);
+    U64 ksqBit      = piece(Board, KING, side);
+    U64 enemyKsqBit = piece(Board, KING, !side);
+    assert(enemyKsqBit);
+
+    if(!ksqBit) { // they've just captures our king
+        Board->checkers = BIT(dst);
+        // Board->kingBlockers[side] = 0; // there is no king to block
+        // update_kingBlockers(Board, !side);
+        return;
+    }
+
     int ksq      = lsb(piece(Board, KING, side));
     int enemyKsq = lsb(piece(Board, KING, !side));
 
-    U64 blockerCandidates = isUndo ? gen_queen_magic_attacks(ksq, Board->byType[ALL]) : Board->kingBlockers[side];
     int promotedPiece = (spc == PROMOTION ? ppt + KNIGHT : mvd);
-    int castle = src < dst ? side == WHITE ? WHITE_OO  : BLACK_OO
-                           : side == WHITE ? WHITE_OOO : BLACK_OOO;
-    if( (BIT(src) & blockerCandidates)                  ||
+    int castle = src < dst ? side == WHITE ? BLACK_OO  : WHITE_OO
+                           : side == WHITE ? BLACK_OOO : WHITE_OOO;
+    if( (BIT(src) & Board->kingBlockers[side])          ||
         (BIT(dst) & pseudo_attacks[promotedPiece][ksq]) ||
         (spc == EN_PASSANT)                             ||
-        ((spc == CASTLING) && (rook_dst[castle] & gen_rook_magic_attacks(ksq, Board->byType[ALL]))))
+        ((spc == CASTLING) && (BIT(rook_dst[castle]) & gen_rook_magic_attacks(ksq, Board->byType[ALL]))))
             update_checkers(Board);
     else Board->checkers = 0ULL;
 
-    if(srcDst64 & Board->checkSquares[side][QUEEN])
-        update_checkSquares(Board, side);
-    if(mvd == KING)
-        update_checkSquares(Board, !side);
-    else if(srcDst64 & Board->checkSquares[!side][QUEEN])
-        update_checkSquares(Board, !side);
-
+    // if(srcDst64 & Board->checkSquares[side][QUEEN])
+    //     update_checkSquares(Board, side);
+    // if(mvd == KING)
+    //     update_checkSquares(Board, !side);
+    // else if(srcDst64 & Board->checkSquares[!side][QUEEN])
+    //     update_checkSquares(Board, !side);
+    
     if((mvd == KING) || (spc == EN_PASSANT)) {
-        update_kingBlockers(Board, WHITE);
+        update_kingBlockers(Board, WHITE); // TODO: surely I don't need two conditions
         update_kingBlockers(Board, BLACK);
     } else {
         if(srcDst64 & pseudo_attacks[QUEEN][ksq])      update_kingBlockers(Board, side);
@@ -128,7 +144,23 @@ void move_piece(Board_s* const Board, const int pieceType, const int src, const 
     Board->key ^= zobrist_square[side][pieceType][dst];
 }
 
+int isLegal(const Board_s* const Board) {
+    int sideToMove = Board->side;
+    int notSideToMove = sideToMove == WHITE ? BLACK : WHITE;
+
+    U64 whiteKsq64 = piece(Board, KING, WHITE);
+    U64 blackKsq64 = piece(Board, KING, BLACK);
+    if(BITS(whiteKsq64) != 1) return 0;
+    if(BITS(blackKsq64) != 1) return 0;
+
+    int stmEnemyKsq = lsb(piece(Board, KING, notSideToMove));
+    if(attackers_to(Board, stmEnemyKsq, Board->byType[ALL]) & Board->byColour[sideToMove]) return 0;
+
+    return 1;
+}
+
 Board_s board_init(char* fen) {
+    // char dup[] = fen;
     Board_s Board;
 
     // Parse FEN
@@ -157,7 +189,7 @@ Board_s board_init(char* fen) {
         Board.checkSquares[WHITE][i] = 0;
         Board.checkSquares[BLACK][i] = 0;
     }
-    Undo_s tUndo = {NULL_MOVE, EMPTY, NO_CASTLING, 0, 0ULL, 0, 0ULL};
+    Undo_s tUndo = {NULL_MOVE, EMPTY, NO_CASTLING, 0, 0ULL, .kingBlockers[WHITE] = 0ULL, 0ULL, 0, 0ULL};
     for(int i = 0; i < MAX_GAME_PLYS; i++)
         Board.Undos[i] = tUndo;
 

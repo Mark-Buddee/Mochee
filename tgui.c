@@ -13,6 +13,9 @@
 #include "inc/perft.h"
 #include "inc/search.h"
 #include "inc/eval.h"
+#include "inc/tt.h"
+#include "inc/magic.h"
+#include "inc/init.h"
 
 void print_version(void) {
     printf("\n%s %s %s\n\n", NAME, VERSION, NAME_DESC);
@@ -30,7 +33,7 @@ void print_bitBoard(U64 bitBoard) {
     printf("\n");
 }
 
-void print_board(const Board_s *Board, int flipped) {
+void print_board(const Board_s* const Board, int flipped) {
     if(flipped) {
         for(int rank = RANK_1; rank <= RANK_8; rank++) {
             for(int file = FILE_H; file >= FILE_A; file--) {
@@ -57,10 +60,56 @@ void print_board(const Board_s *Board, int flipped) {
     // printf("\n");
 }
 
-void src2str(char srcStr[], int src) {
-    srcStr[0] = FILE(src) + 'a';
-    srcStr[1] = RANK(src) + '1';
-    srcStr[2] = '\0';
+void print_detailed(const Board_s* const Board, int flipped) {
+    print_board(Board, flipped);
+    int side = Board->side;
+    printf("\n");
+    printf("side..............%s\n", Board->side == WHITE ? "WHITE" : "BLACK");
+    printf("hisPly............%d\n", Board->hisPly);
+    printf("hundredPly........%d\n", Board->hundredPly);
+    printf("castlingRights....%.8x\n", Board->castlingRights);
+    printf("staticEval........%d\n", Board->staticEval);
+    printf("key...............%.16llx\n", Board->key);
+    printf("\n");
+    printf("enPas.............%.16llx\n", Board->enPas);
+    printf("white.............%.16llx\n", Board->byColour[WHITE]);
+    printf("black.............%.16llx\n", Board->byColour[BLACK]);
+    printf("all...............%.16llx\n", Board->byType[ALL]);
+    printf("pawns.............%.16llx\n", Board->byType[PAWN]);
+    printf("knights...........%.16llx\n", Board->byType[KNIGHT]);
+    printf("bishops...........%.16llx\n", Board->byType[BISHOP]);
+    printf("rooks.............%.16llx\n", Board->byType[ROOK]);
+    printf("queens............%.16llx\n", Board->byType[QUEEN]);
+    printf("kings.............%.16llx\n", Board->byType[KING]);
+    printf("\n");
+    printf("checkers..........%.16llx\n", Board->checkers);
+    printf("pawnChecks........%.16llx\n", Board->checkSquares[side][PAWN]);
+    printf("knightChecks......%.16llx\n", Board->checkSquares[side][KNIGHT]);
+    printf("bishopChecks......%.16llx\n", Board->checkSquares[side][BISHOP]);
+    printf("rookChecks........%.16llx\n", Board->checkSquares[side][ROOK]);
+    printf("queenChecks.......%.16llx\n", Board->checkSquares[side][QUEEN]);
+    printf("whiteBlockers.....%.16llx\n", Board->kingBlockers[WHITE]);
+    printf("blackBlockers.....%.16llx\n", Board->kingBlockers[BLACK]);
+}
+
+void print_variation(Board_s* const Board, int maxDepth) {
+
+    TTEntry_s Entry = TT[Board->key % TT_ENTRIES];
+    if(Entry.key != Board->key >> 32) return;
+    if(!IS_PV_NODE(Entry.scoreBound)) return;
+    Move bestMove = Entry.move;
+    if(bestMove == NULL_MOVE) return;
+
+    print_move(Entry.move);
+    printf(" ");
+    
+    if(maxDepth == 1) return;
+
+    do_move(Board, bestMove);
+    print_variation(Board, maxDepth - 1);
+    undo_move(Board);
+
+    // printf("\n");
 }
 
 int str2src(char string[]) {
@@ -69,19 +118,82 @@ int str2src(char string[]) {
     return FR(file, rank);
 }
 
-void debug(void) {
-    printf("DEBUG MODE\n");
-    printf("Type help for a list of commands.\n\n");
+int get_ppt(char string[]) {
+    string++;
+    string++;
+    string++;
+    string++;
+
+    switch(string[0]) {
+        case 'n':
+            return KNIGHT - KNIGHT;
+        case 'b':
+            return BISHOP - KNIGHT;
+        case 'r':
+            return ROOK - KNIGHT;
+        case 'q':
+            return QUEEN - KNIGHT;
+    }
+    return 0;
+}
+
+void src2str(char srcStr[], int src) {
+    srcStr[0] = FILE(src) + 'a';
+    srcStr[1] = RANK(src) + '1';
+    srcStr[2] = '\0';
+}
+
+void print_move(Move move) {
+    if(move == NULL_MOVE) {
+        printf("0000");
+        return;
+    }
+
+    char src[3];
+    char dst[3];
+    src2str(src, SRC(move));
+    src2str(dst, DST(move));
+    printf("%s%s", src, dst);
+
+    if(SPC(move) == PROMOTION) {
+        int ppt = KNIGHT + PPT(move);
+        switch(ppt) {
+            case KNIGHT:
+                printf("n");
+                break;
+            case BISHOP:
+                printf("b");
+                break;
+            case ROOK:
+                printf("r");
+                break;
+            case QUEEN:
+                printf("q");
+                break;
+            default:
+                printf("print_move unexpected input. Exiting...");
+                exit(1);
+        }
+    }
+}
+
+void console(void) {
+    printf("\033[F");
+    // printf("\033[2J");
+    printf("Entering console mode. ");
+    printf("Type 'help' for a list of commands\n\n");
+    init_all();
 
     char start_fen_s[] = START_FEN;
     Board_s Board = board_init(start_fen_s);
+    // Board_s Board = board_init(START_FEN);
     int flipped = Board.side;
     print_board(&Board, flipped);
     printf("\n");
     char line[BUFF_SIZE];
 
     //Commands
-    char help_s[] = "help", reset_s[] = "reset", print_s[] = "print", board_s[] = "board", moves_s[] = "moves", undo_s[] = "undo", perft_s[] = "perft", eval_s[] = "eval", play_s[] = "play", flip_s[] = "flip", fen_s[] = "fen", end_s[] = "end";
+    char test_s[] = "test", help_s[] = "help", reset_s[] = "reset", print_s[] = "print", board_s[] = "board", moves_s[] = "moves", undo_s[] = "undo", perft_s[] = "perft", eval_s[] = "eval", play_s[] = "play", flip_s[] = "flip", fen_s[] = "fen", end_s[] = "end";
     // 255 Empty array. Use memcpy here instead duh
     char empty_s[] = "                                                                                                                                                                                                                                                                ";
 
@@ -89,7 +201,8 @@ void debug(void) {
         // Detect checkmate
         Move_s List[MAX_MOVES];
         if(gen_legal(&Board, List) == List) {
-            printf("Checkmate!\n");
+            if(Board.checkers) printf("Checkmate!\n");
+            else printf("Stalemate!");
             // exit(1);
         }
 
@@ -101,80 +214,64 @@ void debug(void) {
 
         if(strcmp(tok, help_s) == 0) {
             printf(
-                "Commands:\n"
                 " help\n"
                 " reset\n"
                 " print\n"
                 " board\n"
-                " moves\n"
-                " MOVE\n"
                 " undo\n"
-                " perft DEPTH\n"
-                " eval DEPTH\n"
-                " play DEPTH\n"
+                " test\n"
                 " flip\n"
-                " fen FEN\n"
-                " end\n");
+                " end\n"
+                " moves <depth>\n"
+                " perft <depth>\n"
+                " eval  <depth>\n"
+                " play  <depth>\n"
+                " fen   <fen>\n"
+                "<move>\n");
 
         } else if (strcmp(tok, reset_s) == 0) {
             strcpy(start_fen_s, START_FEN);
             Board = board_init(start_fen_s);
+            init_tt();
             print_board(&Board, flipped);
+
+        } else if (strcmp(tok, test_s) == 0) {
+            perft_unit_test();
 
         } else if (strcmp(tok, print_s) == 0) {
             print_board(&Board, flipped);
 
         } else if (strcmp(tok, board_s) == 0) {
-            print_board(&Board, flipped);
-            int side = Board.side;
-            printf("\n");
-            printf("side..............%s\n", Board.side == WHITE ? "WHITE" : "BLACK");
-            printf("hisPly............%d\n", Board.hisPly);
-            printf("hundredPly........%d\n", Board.hundredPly);
-            printf("castlingRights....%.8x\n", Board.castlingRights);
-            printf("staticEval........%d\n", Board.staticEval);
-            printf("\n");
-            printf("enPas.............%.16llx\n", Board.enPas);
-            printf("white.............%.16llx\n", Board.byColour[WHITE]);
-            printf("black.............%.16llx\n", Board.byColour[BLACK]);
-            printf("all...............%.16llx\n", Board.byType[ALL]);
-            printf("pawns.............%.16llx\n", Board.byType[PAWN]);
-            printf("knights...........%.16llx\n", Board.byType[KNIGHT]);
-            printf("bishops...........%.16llx\n", Board.byType[BISHOP]);
-            printf("rooks.............%.16llx\n", Board.byType[ROOK]);
-            printf("queens............%.16llx\n", Board.byType[QUEEN]);
-            printf("kings.............%.16llx\n", Board.byType[KING]);
-            printf("\n");
-            printf("checkers..........%.16llx\n", Board.checkers);
-            printf("pawnChecks........%.16llx\n", Board.checkSquares[side][PAWN]);
-            printf("knightChecks......%.16llx\n", Board.checkSquares[side][KNIGHT]);
-            printf("bishopChecks......%.16llx\n", Board.checkSquares[side][BISHOP]);
-            printf("rookChecks........%.16llx\n", Board.checkSquares[side][ROOK]);
-            printf("queenChecks.......%.16llx\n", Board.checkSquares[side][QUEEN]);
-            printf("whiteBlockers.....%.16llx\n", Board.kingBlockers[WHITE]);
-            printf("blackBlockers.....%.16llx\n", Board.kingBlockers[BLACK]);
+            print_detailed(&Board, flipped);
 
         } else if (strcmp(tok, moves_s) == 0) {
             tok = strtok(NULL, " ");
             int depth = tok == NULL ? 1 : atoi(tok);
             Move_s List[MAX_MOVES];
             Move_s* cur = List;
+            // Move_s* end = gen_all(&Board, List, Board.side, CAPTURES);
             Move_s* end = gen_legal(&Board, List);
+            long long unsigned totalNodes = 0;
             while(cur != end) {
                 Move move = cur->move;
-                char srcStr[3];
-                src2str(srcStr, SRC(move));
-                char dstStr[3];
-                src2str(dstStr, DST(move));
-                do_move(&Board, move);
-                printf("%.2s%.2s %llu\n", srcStr, dstStr, num_nodes(&Board, depth));
+                do_move(&Board, cur->move);
+                unsigned long long numNodes = num_nodes(&Board, depth);
+                totalNodes += numNodes;
+                print_move(move);
+                printf(" %llu\n", numNodes);
+                // printf("\n");
                 undo_move(&Board);
                 cur++;
             }
+            printf("\ntotal: %llu\n", totalNodes);
 
         } else if (strcmp(tok, undo_s) == 0) {
+            // TODO: Don't allow undos beyond starting fen
             undo_move(&Board);
+            inc_age();
+            // dec_age();
             print_board(&Board, flipped);
+
         } else if (strcmp(tok, perft_s) == 0) {
             tok = strtok(NULL, " ");
             assert(tok != NULL);
@@ -182,57 +279,82 @@ void debug(void) {
             perft(&Board, depth);
 
         } else if (strcmp(tok, end_s) == 0) {
-            exit(1);
+            return;
+
         } else if (strcmp(tok, eval_s) == 0) {
             tok = strtok(NULL, " ");
             assert(tok != NULL);
             int depth = atoi(tok);
             do_search(&Board, depth);
+
         } else if (strcmp(tok, play_s) == 0) {
             tok = strtok(NULL, " ");
             assert(tok != NULL);
-            int depth = atoi(tok);
-            int bestMove;
+            double duration = atof(tok);
             clock_t start, end;
-            start = clock();   
-            // int eval = alpha_beta(&Board, -INF, INF, depth);
-            int eval = alpha_beta(&Board, -INF, INF, depth, depth, &bestMove);
-            end = clock();
-            double dt = (double)(end-start)/CLOCKS_PER_SEC;
-            int trueEval = Board.side == WHITE ? eval : -eval;
-            do_move(&Board, bestMove);
 
-            char bestSrc[3];
-            char bestDst[3];
-            src2str(bestSrc, SRC(bestMove));
-            src2str(bestDst, DST(bestMove));
-            printf("Eval: %5d bestMove: %s%s time:%7g\n", trueEval, bestSrc, bestDst, dt);
+            start = clock();
+            Move bestMove = iterative_deepening(&Board, duration);
+            end = clock();
+            double dt = (double)(end - start) / CLOCKS_PER_SEC;
+
+
+            do_move(&Board, bestMove);
+            inc_age();
+
+            // printf("doing %s%s\n", bestSrc, bestDst);
+            // assert(TT[Board.key % TT_ENTRIES].key == Board.key >> 32);
+            int eval = SCORE(TT[Board.key % TT_ENTRIES].scoreBound);
+            int trueEval = Board.side == WHITE ? eval : -eval;
+
+            printf("\nEval: %5hu bestMove: ", trueEval);
+            print_move(bestMove);
+            printf(" time:%7g\n", dt);
             print_board(&Board, flipped);
+
         } else if (strcmp(tok, flip_s) == 0) {
             flipped = !flipped;
             print_board(&Board, flipped);
+
         } else if (strcmp(tok, fen_s) == 0) {
             tok = strtok(NULL, "\0");
             assert(tok != NULL);
             Board = board_init(tok);
+            init_tt();
             print_board(&Board, flipped);
+
         } else {
+            int ppt = get_ppt(tok);
             int src = str2src(tok++);
             int dst = str2src(++tok);
 
-            Move moveToMake = NULL_MOVE;
+            Move MoveToMake = NULL_MOVE;
             Move_s List[MAX_MOVES];
             Move_s* cur = List;
             Move_s* end = gen_legal(&Board, List);
             while(cur != end) {
-                if(SRC(cur->move) == src && DST(cur->move) == dst) {
-                    moveToMake = cur->move;
+                // printf("PPT: %d\n", PPT(cur->move));
+                if(SRC(cur->move) == src && DST(cur->move) == dst && PPT(cur->move) == ppt) {
+                    MoveToMake = cur->move;
+                    // MoveSToMake->moveVal = move_eval(&Board, MoveSToMake->move);
                     break;
                 }
                 cur++;
             }
-            if(moveToMake != NULL_MOVE) {
-                do_move(&Board, moveToMake);
+            // Move_s List2[MAX_MOVES];
+            // cur = List2;
+            // end = gen_all(&Board, List2, Board.side, CAPTURES);
+            // while(cur != end) {
+            //     if(SRC(cur->move) == src && DST(cur->move) == dst) {
+            //         MoveToMake = cur->move;
+            //         // MoveSToMake->moveVal = move_eval(&Board, MoveSToMake->move);
+            //         break;
+            //     }
+            //     cur++;
+            // }
+            if(MoveToMake != NULL_MOVE) {
+                do_move(&Board, MoveToMake);
+                inc_age();
                 print_board(&Board, flipped);
             } else
                 printf("Move not found\n");
@@ -240,3 +362,5 @@ void debug(void) {
         printf("\n");
     }
 }
+
+

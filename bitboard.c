@@ -4,6 +4,7 @@
 #include "inc/defs.h"
 #include "inc/bitboard.h"
 #include "inc/magic.h"
+#include "inc/tgui.h"
 
 U64 pawn_attacks[NUM_SIDES][NUM_SQUARES];
 U64 pseudo_attacks[NUM_PIECES][NUM_SQUARES]; // Don't use for ALL
@@ -22,7 +23,7 @@ U64 between[NUM_SQUARES][NUM_SQUARES];
 
 int lsb(U64 bb) {
     assert(bb);
-    return __builtin_ctzll(bb);
+    return bb ? __builtin_ctzll(bb) : 0;
 }
 
 int pop_lsb(U64* bbPtr) {
@@ -40,13 +41,13 @@ U64 file64(const int sq) { // TODO: this can be an array
     return tFile;
 }
 
-int vert_dist(const int sq1, const int sq2) {
-    assert(A1 <= sq1 && sq1 <= H8);
-    assert(A1 <= sq2 && sq2 <= H8);
-    int rank1 = RANK(sq1);
-    int rank2 = RANK(sq2);
-    return abs(rank2 - rank1);
-}
+// int vert_dist(const int sq1, const int sq2) {
+//     assert(A1 <= sq1 && sq1 <= H8);
+//     assert(A1 <= sq2 && sq2 <= H8);
+//     int rank1 = RANK(sq1);
+//     int rank2 = RANK(sq2);
+//     return abs(rank2 - rank1);
+// }
 
 U64 more_than_one(const U64 bb) {
     return bb & (bb - 1);

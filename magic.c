@@ -58,7 +58,7 @@ U64* atkPtr[2][NUM_SQUARES];
 void init_rand(void) {
     // time_t t;
     // srand((unsigned) time(&t));
-    srand(1);
+    srand(510474708);
 }
 
 U64 rand64(void) {

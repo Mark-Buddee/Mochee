@@ -47,6 +47,7 @@ int legal(const Board_s* Board, const Move move) {
     if(spc == EN_PASSANT) {
         int side = Board->side;
         int ksq = lsb(piece(Board, KING, side));
+        // assert(ksq);
         U64 obstacles = (Board->byType[ALL] ^ BIT(src) ^ BIT(enp_cpt[dst])) | BIT(dst);
 
         return !(gen_bishop_magic_attacks(ksq, obstacles) & (piece(Board, QUEEN, !side) | piece(Board, BISHOP, !side)))
@@ -97,10 +98,10 @@ Move_s* gen_pawn_moves(const Board_s* Board, Move_s* List, U64 mask, const int s
         }
 
         if(type == QUIET_CHECKS) {
-            int ksq = lsb(piece(Board, KING, !side));
-            U64 dcCandidatePawns = Board->kingBlockers[!side] & ~file64(ksq);
-            dsts1 &= pawn_attacks[!side][ksq] | shift(dcCandidatePawns, UP);
-            dsts2 &= pawn_attacks[!side][ksq] | shift(dcCandidatePawns, UP + UP);
+            int enemyKsq = lsb(piece(Board, KING, !side));
+            U64 dcCandidatePawns = Board->kingBlockers[!side] & ~file64(enemyKsq);
+            dsts1 &= pawn_attacks[!side][enemyKsq] | shift(dcCandidatePawns, UP);
+            dsts2 &= pawn_attacks[!side][enemyKsq] | shift(dcCandidatePawns, UP + UP);
         }
 
         while(dsts1) {
@@ -150,7 +151,7 @@ Move_s* gen_pawn_moves(const Board_s* Board, Move_s* List, U64 mask, const int s
             List = make_move(List, dst - UP_LEFT, dst);
         }
 
-        if(Board->enPas != OFFBOARD)
+        if(Board->enPas)
             // An en passant capture cannot resolve a discovered check
             if(type == EVASIONS && (mask & shift(Board->enPas, UP))) return List;
         
@@ -186,7 +187,10 @@ Move_s* gen_moves(const Board_s* Board, Move_s* List, const U64 mask, const int 
 
 Move_s* gen_all(const Board_s* Board, Move_s* List, const int side, const int type) {
     const int quietChecks = type == QUIET_CHECKS;
-    const int ksq = lsb(piece(Board, KING, side));
+    const U64 kingBit = piece(Board, KING, side);
+    if(!kingBit) return List;
+
+    const int ksq = lsb(kingBit);
     U64 mask;
 
     // Non-king moves
@@ -197,9 +201,9 @@ Move_s* gen_all(const Board_s* Board, Move_s* List, const int side, const int ty
              :                        ~Board->byType[ALL];
 
         List = gen_moves(Board, List, mask, side,  QUEEN, quietChecks);
+        List = gen_moves(Board, List, mask, side,   ROOK, quietChecks);
         List = gen_moves(Board, List, mask, side, BISHOP, quietChecks);
         List = gen_moves(Board, List, mask, side, KNIGHT, quietChecks);
-        List = gen_moves(Board, List, mask, side,   ROOK, quietChecks);
         List = gen_pawn_moves(Board, List, mask, side, type);
     }
 
@@ -243,17 +247,18 @@ NON_EVASIONS Generates all pseudo-legal captures and non-captures
 Move_s* gen_legal(const Board_s* const Board, Move_s* List) {
     int side = Board->side;
     U64 pinned = Board->kingBlockers[side] & Board->byColour[side];
-    int ksq = lsb(piece(Board, KING, side));
     Move_s* cur = List;
 
     List = Board->checkers ? gen_all(Board, List, side, EVASIONS)
                            : gen_all(Board, List, side, NON_EVASIONS);
-                           
-    while(cur != List)
+                        
+    while(cur != List) {
+        int ksq = lsb(piece(Board, KING, side));
         if(((pinned & BIT(SRC(cur->move))) || SRC(cur->move) == ksq || SPC(cur->move) == EN_PASSANT) && !legal(Board, cur->move))
             cur->move = (--List)->move;
         else
             ++cur;
+    }
 
     return List;
 }

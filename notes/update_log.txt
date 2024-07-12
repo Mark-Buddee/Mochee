@@ -1,0 +1,237 @@
+v0.50
+    Correct perft results up to depth 3 ply
+
+v0.51
+    -En passant now implemented correctly
+    Incorrect perft results can now be made to any depth
+
+v0.52
+    Checks are detected
+
+v0.53
+    -Check evasion nuances fixed
+    Double checks are detected
+    Evaluation can be made, but illegal positions persist
+    Evaluation is based only on material and piece square tables
+    Exhaustive search algorithm; takes minutes to evaluate to depth of 7 ply
+        Depth 0 Eval: 0
+        Depth 1 Eval: 46
+        Depth 2 Eval: 0
+        Depth 3 Eval: 46
+        Depth 4 Eval: -5
+        Depth 5 Eval: 129
+        Depth 6 Eval: -69
+        Depth 7 Eval: 102
+
+v0.6    14/07/23
+    -Double check detection fixed
+    Debug mode added
+    Move generation is rewritten, taking inspiration from stockfish
+    Correct perft results (so far) up to any depth can be made
+        depth 0 ply:           0 positions in 0 seconds                                                                                                     
+        depth 1 ply:          20 positions in 0.001 seconds
+        depth 2 ply:         400 positions in 0.002 seconds
+        depth 3 ply:        8902 positions in 0.004 seconds
+        depth 4 ply:      197281 positions in 0.013 seconds
+        depth 5 ply:     4865609 positions in 0.16 seconds
+        depth 6 ply:   119060324 positions in 3.7 seconds
+        depth 7 ply:  3195901860 positions in 104 seconds
+
+v0.61   15/07/23
+    Perft unit test added
+    Various positions and depths easily added in a csv file
+    Looks sick
+        PHASE    TEST TYPE  DEPTH  NODES        RESULT
+        Opening  General    6 ply  119060324    PASSED in 3.559 seconds
+        Midgame  Castling   5 ply  193690690    PASSED in 3.868 seconds
+        Endgame  EnPassant  7 ply  178633661    PASSED in 9.691 seconds
+        Midgame  Promotion  6 ply  706045033    PASSED in 15.21 seconds
+        Opening  Castling   5 ply   89941194    PASSED in 2.12 seconds
+        Opening  General    5 ply  164075551    PASSED in 2.721 seconds
+
+        SUMMARY: PASS in 37.17 total seconds
+
+v0.7    18/07/23
+    Evaluation search reimplemented, achieving almost identical results to v0.53
+    Displaying the principal variation proves a little too complicated for its worth at this point
+    However, preliminary validation shows promise (1.e4 e5 2.(Nf3) ...)
+        DEPTH  EVAL  TIME(s)
+        1 ply    46        0
+        2 ply     0        0
+        3 ply    46    0.005
+        4 ply    -5    0.137
+        5 ply   129    2.879
+        6 ply   -69   72.222
+        7 ply   124  1974.25
+
+v0.71   19/07/23
+    Alpha beta search and incremental board evaluation implemented 
+    Significant speed-up to evaluation search
+        DEPTH  EVAL  TIME(s)
+        1 ply    46        0
+        2 ply     0        0
+        3 ply    46    0.002
+        4 ply    -5    0.009
+        5 ply   129    0.058
+        6 ply   -69    0.823
+        7 ply   124     4.97
+        8 ply   -94   63.876
+        9 ply   143  330.505
+       10 ply   -95  3961.67
+
+v0.72   28/07/23
+    Best move is displayed
+    Play function added to debug mode, allowing for player vs computer games
+    Fancy magic bitboards implemented
+        Limits on the best possible shift values are taken from online
+        All magic numbers are self generated with the exception of:
+            Rook table 7th and 8th rank
+        Attack table is 725.5 KB, further table size reductions aren't necessary
+    Significant speed-up to move generation
+        Move generation ~2x faster. Perft unit test now takes 18.62 seconds (down from 37.17)
+        Evaluation ~7x faster. Evaluation search to depth 10 takes 707.797 seconds (down from 3961.67)
+        DEPTH  EVAL  TIME(s)  BEST
+        1 ply    46        0  d2d4
+        2 ply     0        0  d2d4
+        3 ply    46        0  e2e4
+        4 ply    -5    0.002  g1f3
+        5 ply   129     0.01  e2e4
+        6 ply   -69    0.148  f2f4
+        7 ply   124    0.961  e2e3
+        8 ply   -94   11.504  e2e4
+        9 ply   143   62.375  e2e3
+       10 ply   -95  707.797  d2d4
+
+    ***FIRST MATCH*** 
+        Against KDAWWWWWGGGGGSSS
+        After a clumsy opening, Mochee offered a bishop for two pawns with 14... Bh5?! for a promising initiative
+        It continued by 'sacrificing' an exchange for mate in 6 with 25... Qg2+ 26. Rf3 Qg6+ 27. Rf5 Qxf5#
+        While it correctly evaluated the position, a bug prevented the mate from playing out
+        The game continued, slowly losing initiative, until KDAWWWWWGGGGGSSS found a threatening attack,
+        in which the same bug walked itself into mate. 
+        KDAWWWWWGGGGGSSS 1-0 Mochee
+
+        1. e4 d5 2. exd5 Qxd5 3. Nc3 Qd4 4. Nf3 Qf6 5. d4 Bg4 6. Be2 Nd7 7. O-O O-O-O 8.
+        Ne4 Qc6 9. Ng3 Qf6 10. a4 c5 11. d5 Nb6 12. Ne4 Qf5 13. Nc3 e6 14. h3 Bh5 15. g4
+         Bxg4 16. hxg4 Qxg4+ 17. Kh1 Nxd5 18. Nxd5 Rxd5 19. Nh2 Qh4 20. Qe1 Re5 21. Be3 
+        Bd6 22. Kg2 Rxe3 23. fxe3 Qxh2+ 24. Kf3 Qh3+ 25. Ke4 Nh6 26. Kd3 Qg2 27. Bf3 Qh3
+         28. Ke2 Nf5 29. Rg1 Be7 30. Ra3 Bh4 31. Qa5 Qh2+ 32. Rg2 Ng3+ 33. Kd3 Qh1 34. 
+        Qxc5+ Kb8 35. Qd6+ Ka8 36. Bxb7+ Kxb7 37. Rb3+ Ka8 38. Qc6# 1-0
+
+v0.8   20/08/23
+    -Engine can now correctly chase mate after finding one, even if told to search beyond mate
+    -Fixed an excessive memory allocation in alphaBeta
+    Position setting by fen implemented in debug mode
+    Transposition hash table implemented
+        With a gigabyte of space allocated, roughly doubles evaluation speed
+        Allows entire principal variation to be displayed
+    Hash table increased to 1.9 GB, greatly improving (>30% faster) deeper searches (depth 10+ ply) compared to 1 GB
+    Iterative deepening implemented, doubling evaluation speed
+    Most-valuable-first move ordering implemented, doubling evaluation speed
+    Move generation and evaluation about 30% faster with incremental check-data updates
+        DEPTH  EVAL  TIME(s)  BEST                                                                                                              
+        1 ply    46        0  d2d4
+        2 ply     0        0  d2d4 d7d5
+        3 ply    46        0  e2e4 e7e5 d2d4
+        4 ply    -5    0.001  g1f3 d7d5 d2d4 e7e5 
+        5 ply   129    0.003  e2e4 e7e5 d1h5 d7d5 h5f7
+        6 ply   -69    0.035  f2f4 e7e6 g1f3 f8d6 d2d4 d6f4 
+        7 ply   124     0.21  e2e3 f7f5 d1h5 g7g6 h5g5 d7d5 g5g6 
+        8 ply   -94    1.627  e2e4 b8c6 b1c3 e7e6 g1e2 c6b4 d2d4 b4c2 
+        9 ply   143    6.618  e2e3 d7d5 d1h5 b8c6 f1b5 a7a6 b5a4 b7b5 h5f7 
+       10 ply   -95   59.186  d2d4 e7e6 b1c3 b8c6 e2e4 f8b4 a2a3 b4a5 b2b4 c6d4 
+       11 ply   129   635.82  e2e3 d7d5 d2d4 e7e6
+
+v0.81   23/08/23
+    Rudimentary transposition table replacement scheme implemented
+        PV nodes of the current search (an entire iterative deepening routine) will not be overwritten unless are being improved upon
+    Rudimentary move ordering implemented, predicting which moves are most likely to be good, and trying them first
+        Transposition table move recommendations are biased greatly
+        Promotions, winning captures, and losing captures are biased less greatly, and descending in that order
+        Moves that attain a certain positive bias will be sorted and searched in best-to-worst order. The rest are left unsorted
+    A sizeable speed-up to small depths, and greater result at larger depths. Note the doubling speed beyond depth 9 ply since the last version                                                                                                                             
+        DEPTH  EVAL  TIME(s)  BEST                                                                                                                                
+        1 ply    46        0  d2d4
+        2 ply     0        0  d2d4 d7d5
+        3 ply    46    0.001  e2e4 e7e5 d2d4
+        4 ply    -5        0  g1f3 d7d5 d2d4 e7e5 
+        5 ply   129    0.003  e2e4 e7e5 d1h5 d7d5 h5f7
+        6 ply   -69    0.041  f2f4 e7e6 g1f3 f8d6 d2d4 d6f4 
+        7 ply   124    0.167  e2e3 f7f5 d1h5 g7g6 h5g5 d7d5 g5g6 
+        8 ply   -94    1.409  e2e4 b8c6 b1c3 e7e6 g1e2 
+        9 ply   143     4.23  e2e3 d7d5 d1h5 b8c6 f1b5 a7a6 b5a4 b7b5 h5f7 
+       10 ply   -95    35.64  d2d4 e7e6 b1c3 b8c6 e2e4 f8b4 a2a3 b4a5 b2b4 c6d4 
+       11 ply   129  324.758  e2e3 d7d5 d2d4 e7e6 b1d2
+
+    ***SECOND MATCH*** 
+        Against hame_33
+        Hamish is able to navigate Mochee's offbeat opening, giving Mochee some kingside weakness for Hamish to play at.
+        However, after trades by both players, the game leads to a drawn yet tricky king and 6-pawn-each endgame. While Mochee
+        did miss 3 chances at turning the game, it gave Hamish no more chances thereafter, capitalising on a zugzwang to win a
+        pawn, and overwhelming past juicer. Tauntingly, Mochee races to restrict Hamish's movements, forcing Hamish to sacrifice
+        every pawn until stalemate, and the game ends in a draw. 
+
+       1. e4 Nc6 2. d4 d5 3. e5 f6 4. f4 Bf5 5. Nf3 e6 6. Bd3 Bxd3 7. Qxd3 Nh6 8. O-O fxe5 9. fxe5 Be7 10. Bxh6 gxh6 
+       11. c4 O-O 12. Nc3 Nb4 13. Qd2 Bg5 14. Nxg5 Qxg5 15. Qxg5+ hxg5 16. cxd5 Nxd5 17. Nxd5 exd5 18. Rxf8+ Rxf8 
+       19. Rf1 Rxf1+ 20. Kxf1 Kf7 21. h4 gxh4 22. Kf2 Kg6 23. Ke3 a5 24. Kf4 h5 25. a4 b6 26. b3 c5 27. Ke3 Kf5 
+       28. Kd3 cxd4 29. Kxd4 Ke6 30. Ke3 Kxe5 31. Kd3 d4 32. Kd2 Ke4 33. Ke2 d3+ 34. Kd1 Ke3 35. Ke1 d2+ 36. Kd1 Kd3 
+       37. g4 hxg3 38. b4 axb4 39. a5 bxa5 1/2-1/2
+
+v0.9 28/05/24
+    -Stalemates are treated as draws, and no longer as wins
+    Rudimentary quiescient search gives a more stable evaluation, more sensical variations, and 100% speed boost to depths < 10 ply
+        QSearch does not deal with the transposition table
+    In quiet positions, there is almost always a better alternative move than doing nothing.
+        This assumption slows depths < 10 ply by ~20% but improves greater depths by ~50%
+
+        DEPTH  EVAL  TIME(s)  BEST                                                                                                     
+        1 ply    46        0  d2d4
+        2 ply     0        0  d2d4 d7d5
+        3 ply    37    0.001  d2d4 d7d5 g1f3 
+        4 ply     0    0.001  d2d4 d7d5 g1f3 g8f6
+        5 ply    37    0.006  e2e4 d7d5 e4d5 d8d5 d2d4
+        6 ply     1    0.046  e2e4 b8c6 d2d4 d7d5 e4d5 d8d5 
+        7 ply    38    0.101  e2e4 b8c6 d2d4 d7d5 e4d5 d8d5 g1f3 
+        8 ply     4    0.689  e2e4 b8c6 g1f3 g8f6 e4e5 f6g4 d2d4 d7d5 
+        9 ply    39    2.254  e2e4 b8c6 g1f3 g8f6 b1c3 d7d5 e4d5 f6d5 d2d4 
+       10 ply     9   37.559  e2e4 e7e5 g1f3 g8f6 b1c3 f8d6 d2d4 e5d4 d1d4 e8g8 
+       11 ply    35  434.675  g1f3 d7d5 e2e3 b8c6 d2d4 g8f6 f1e2 c8f5 e1g1 c6b4 c2c4
+
+v1.0 03/06/24
+    v1.0 is released to Lichess!
+    -underpromotions allowed as input by the user
+    Qsearch makes evasions when in check, and else makes captures
+        QSearch allows for illegal positions in order to speed up move generation
+        Despite no longer utilising iterative move evaluation, this framework is faster (and more accurate) than without any QSearch
+    QSearch Delta-pruning implemented, no longer investigating hopeless lines, far down in material
+        10% speed boost to depths greater than 10 ply
+
+    DEPTH  EVAL  TIME(s)  BEST                                                                                                                                        
+    1 ply    46        0  d2d4
+    2 ply     0        0  d2d4 d7d5
+    3 ply    37        0  d2d4 d7d5 g1f3
+    4 ply     0    0.001  d2d4 d7d5 g1f3 g8f6
+    5 ply    37    0.007  e2e4 d7d5 e4d5 d8d5 d2d4 
+    6 ply     1    0.039  e2e4 b8c6 d2d4 d7d5 e4d5 d8d5 
+    7 ply    38    0.112  e2e4 b8c6 d2d4 d7d5 e4d5 d8d5 g1f3 
+    8 ply     4    0.513  e2e4 b8c6 g1f3 g8f6 e4e5 f6g4 d2d4 d7d5 
+    9 ply    39    2.352  e2e4 b8c6 g1f3 g8f6 b1c3 d7d5 e4d5 f6d5 d2d4 
+   10 ply     9   21.542  e2e4 e7e5 g1f3 g8f6 b1c3 f8d6 d2d4 e5d4 d1d4 e8g8 
+   11 ply    35  391.061  g1f3 d7d5 e2e3 b8c6 d2d4 g8f6 f1e2 c8f5 e1g1 c6b4 c2c4 
+
+
+Reupload to Github
+TT size testing
+killer nodes
+null move
+evaluation bonuses
+Version tester (pair bot against bot)
+Mochee_0
+
+-Wouldn't it be awesome if Move->score had the psqt move values? save some time in move.c
+-Use PSQT only for move ordering
+
+-Prolong checkmate against me as long as possible 
+
+-don't save all-nodes to TT? You may set beta to the score that was saved at an all node, for faster beta cut off oc children
+       

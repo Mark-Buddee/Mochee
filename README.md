@@ -10,3 +10,7 @@ Made with the purpose of crushing the following players decisively, in every mat
     -dsingarayar
     -Hogbellyman
     -bsingarayar
+
+Those who do not know what is coming for them (they're on the hit list):
+    -Adstar_1
+    -jagabee231

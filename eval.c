@@ -87,6 +87,7 @@ int static_eval(const Board_s* const Board) {
         srcs = piece(Board, KING, side);
         while(srcs) {
             int src = pop_lsb(&srcs);
+            side_eval += KING_VAL;
             side_eval += king_psqt[side][src];
         }
 
@@ -128,5 +129,6 @@ int move_eval(const Board_s* const Board, const Move move) {
         eval += get_psqt(ROOK, side, rook_dst[castle]);
     }
 
+    // return eval;
     return side == WHITE ? eval : -eval;
 }

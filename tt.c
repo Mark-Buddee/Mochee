@@ -1,9 +1,11 @@
 #include <stdint.h>
+#include <stdio.h>
 #include "inc/defs.h"
 #include "inc/magic.h"
 #include "inc/tt.h"
 #include "inc/board.h"
 #include "inc/bitboard.h"
+#include "inc/tgui.h"
 
 TTEntry_s TT[TT_ENTRIES];
 
@@ -12,10 +14,77 @@ U64 zobrist_blackToPlay;
 U64 zobrist_castle[NUM_CASTLING];
 U64 zobrist_enpSq[NUM_SQUARES];
 
+extern unsigned long long tableHits;
+extern unsigned long long tableUpdates;
+extern unsigned long long tableOverwrites;
+
+// int is_hit(U64 key) {
+//     TTEntry_s CurrentEntry = TT[key % TT_ENTRIES];
+//     if(CurrentEntry.key == (key >> 32)) return 1;
+//     return 0;
+// }
+
+// int add_entry(U64 key, TTEntry_s NewEntry) {
+//     TTEntry_s CurrentEntry = TT[key % TT_ENTRIES];
+
+//     if(IS_PV_NODE(CurrentEntry.scoreBound) && CurrentEntry.age == 0) return;
+//     if((CurrentEntry.key == key >> 32) && (CurrentEntry.depth >= NewEntry.depth)) return;
+
+//     TT[key % TT_ENTRIES] = NewEntry;
+// }
+
+void add_entry(U64 key, Move bestMove, uint16_t scoreBound, uint8_t depth) {
+    TTEntry_s NewEntry = {key >> 32, bestMove, scoreBound, depth, 0};
+    // TTEntry_s NewEntry = {key >> 32, bestMove, scoreBound, depth};
+    TTEntry_s CurrentEntry = TT[key % TT_ENTRIES];
+
+    // if(CurrentEntry.key == NewEntry.key) {
+    //     if(IS_PV_NODE(NewEntry.scoreBound) && !IS_PV_NODE(CurrentEntry.scoreBound) && NewEntry.depth < CurrentEntry.depth) return;
+    //     else if(NewEntry.depth <= CurrentEntry.depth) return;
+    // } else if(IS_PV_NODE(CurrentEntry.scoreBound) && (CurrentEntry.age == 0) && (NewEntry.depth <= CurrentEntry.depth)) return;
+
+    if(IS_PV_NODE(CurrentEntry.scoreBound)) {
+        if(NewEntry.depth <= CurrentEntry.depth) return; // consider keys do NOT match, they are both PV nodes. Under what conditions to save entry?
+    } else if(NewEntry.key == CurrentEntry.key) {
+        if(NewEntry.depth < CurrentEntry.depth) return;
+        if(!IS_PV_NODE(NewEntry.scoreBound) && NewEntry.depth == CurrentEntry.depth) return;
+    }
+
+
+    // if(NewEntry.key == CurrentEntry.key) tableUpdates++;
+    // else if(CurrentEntry.key) tableOverwrites++;
+    TT[key % TT_ENTRIES] = NewEntry;
+}
+
+// int is_table_hit(U64 key, int depth) {
+//     TTEntry_s CurrentEntry = TT[key % TT_ENTRIES];
+//     if(CurrentEntry.key == 0) return 0;
+//     if(CurrentEntry.key != (key >> 32)) {
+//         tableOverwrites++;
+//         return 0;
+//     }
+//     if(CurrentEntry.depth < depth) {
+//         tableUpdates++;
+//         return 0;
+//     }
+//     tableHits++;
+//     return 1;
+// }
+
 void init_tt(void) {
-    TTEntry_s BlankEntry = {0, 0, 0, 0, 0, 0};
+    TTEntry_s BlankEntry = {0, NULL_MOVE, BLANK_NODE, 0, 0};
     for(long long unsigned i = 0; i < TT_ENTRIES; i++)
         TT[i] = BlankEntry;
+}
+
+void inc_age(void) {
+    for(long long unsigned i = 0; i < TT_ENTRIES; i++)
+        if(TT[i].key) TT[i].age++;
+}
+
+void dec_age(void) {
+    for(long long unsigned i = 0; i < TT_ENTRIES; i++)
+        if(TT[i].key && TT[i].age > 0) TT[i].age--;
 }
 
 void init_zobrist(void) {

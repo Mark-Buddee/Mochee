@@ -1,0 +1,5 @@
+-If we are winning, disregard their time left
+-If we are losing, play quicker for a timeout, complicate the position?
+-Stay ahead on time
+-Move quickly if there's an obvious move
+-Think for longer in complicated positions

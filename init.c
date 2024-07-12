@@ -4,6 +4,7 @@
 #include "inc/gen.h"
 #include "inc/bitboard.h"
 #include "inc/magic.h"
+#include "inc/tt.h"
 
 void init_pawn_attacks(void) {
     for(int side = WHITE; side < NUM_SIDES; side++)
@@ -228,4 +229,8 @@ void init_all(void) {
     init_enp_cpt();
     init_line(); // must come before init_between
     init_between();
+
+    init_magic();
+    init_zobrist();
+    init_tt();
 }
