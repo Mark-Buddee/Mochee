@@ -7,8 +7,8 @@
 #define BLANK_NODE 2
 #define ALL_NODE 3
 
-// #define TT_SIZE_MB 1900 // 1024
-#define TT_SIZE_MB 512
+// #define TT_SIZE_MB 1024 // 1900
+#define TT_SIZE_MB 1900
 #define TT_ENTRIES (unsigned long long)(TT_SIZE_MB*1024*1024/sizeof(TTEntry_s))
 
 #define IS_PV_NODE(scoreBound)      (((scoreBound) & NODE_TYPE) == PV_NODE)
@@ -22,6 +22,7 @@ typedef struct {
     uint32_t key;
     Move move;
     int16_t scoreBound;
+    // uint8_t posFreq : 2; // TODO: Bit packing 
     uint8_t depth;
     uint8_t age;
 } TTEntry_s;

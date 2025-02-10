@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <string.h>
+#include <stddef.h>
 
 #include "inc/defs.h"
 #include "inc/tgui.h"
@@ -21,6 +22,10 @@ unsigned long long tableUpdates;
 unsigned long long tableOverwrites;
 
 int main(void) {
+
+	// printf("%lld\n", 5486823173478921566 % 181117672);
+	// printf("%lld\n", 12554450795584811879 % 181117672);
+
     print_version();
     printf("Welcome to Mochee! Type 'console' for console mode\n");
 
@@ -29,16 +34,16 @@ int main(void) {
     // Board_s Board = board_init(start_fen_s);
     // Board_s Board = board_init(START_FEN);
 
+	// console();
     char line[STREAM_BUFF_SIZE];
 	while (1) {
 		memset(&line[0], 0, sizeof(line));
 
 		fflush(stdout);
-		if (!fgets(line, STREAM_BUFF_SIZE, stdin))
-			continue;
-		if (line[0] == '\n')
-			continue;
-		if (!strncmp(line, "console",4)) {
+		if (!fgets(line, STREAM_BUFF_SIZE, stdin)) continue;
+		if (line[0] == '\n') continue;
+		
+		if (!strncmp(line, "console",7)) {
 			console();
 			break;
         }
@@ -48,5 +53,5 @@ int main(void) {
         }
 	}
 
-    // printf("num hits: %lld, num updates: %lld, num overwrites: %lld\n", tableHits, tableUpdates, tableOverwrites);
+    printf("num hits: %lld, num updates: %lld, num overwrites: %lld\n", tableHits, tableUpdates, tableOverwrites);
 }

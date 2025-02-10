@@ -13,6 +13,7 @@
 #include "inc/eval.h"
 #include "inc/magic.h"
 #include "inc/tt.h"
+#include "inc/move.h"
 
 U64 piece(const Board_s* const Board, const int pieceType, const int side) {
     return Board->byType[pieceType] & Board->byColour[side];
@@ -34,6 +35,7 @@ void update_checkers(Board_s* const Board) {
     Board->checkers = attackers_to(Board, ksq, obstacles) & Board->byColour[!side];
 }
 
+// Squares for a piece that will deliver check upon landing on
 void update_checkSquares(Board_s* const Board, const int side) {
     int enemyKsq = lsb(piece(Board, KING, !side));
     U64 obstacles = Board->byType[ALL];
@@ -42,6 +44,7 @@ void update_checkSquares(Board_s* const Board, const int side) {
     Board->checkSquares[side][QUEEN] = Board->checkSquares[side][BISHOP] | Board->checkSquares[side][ROOK];
 }
 
+// Pinned pieces (for both sides)
 void update_kingBlockers(Board_s* const Board, const int side) {
     U64 obstacles = Board->byType[ALL];
     Board->kingBlockers[side] = 0ULL;
@@ -99,9 +102,11 @@ void update_check_data(Board_s* const Board, const Move move, const int mvd) {
             update_checkers(Board);
     else Board->checkers = 0ULL;
 
+    // update_checkSquares(Board, side);
+    // update_checkSquares(Board, !side);
     // if(srcDst64 & Board->checkSquares[side][QUEEN])
     //     update_checkSquares(Board, side);
-    // if(mvd == KING)
+    // else if(mvd == KING)
     //     update_checkSquares(Board, !side);
     // else if(srcDst64 & Board->checkSquares[!side][QUEEN])
     //     update_checkSquares(Board, !side);
@@ -222,6 +227,8 @@ Board_s board_init(char* fen) {
 
     // Static evaluation
     Board.staticEval = static_eval(&Board);
+
+    // inc_posFreq(&Board);
 
     return Board;
 }

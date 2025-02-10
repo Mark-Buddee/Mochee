@@ -1,3 +1,8 @@
+    
+    "I want to finish writing this feature but it's too tiring. I can't grasp all of the concepts in my mind at once anymore.
+     Because I don't realise that I'm exhausted - it feels so good to keep coding, but my progress is slowing.
+     I want to, so I have no reason to stand up and leave the computer."
+
 v0.50
     Correct perft results up to depth 3 ply
 
@@ -181,7 +186,7 @@ v0.9 28/05/24
     -Stalemates are treated as draws, and no longer as wins
     Rudimentary quiescient search gives a more stable evaluation, more sensical variations, and 100% speed boost to depths < 10 ply
         QSearch does not deal with the transposition table
-    In quiet positions, there is almost always a better alternative move than doing nothing.
+    Null move observation: (When not in check) there is almost always a better alternative move than doing nothing.
         This assumption slows depths < 10 ply by ~20% but improves greater depths by ~50%
 
         DEPTH  EVAL  TIME(s)  BEST                                                                                                     
@@ -202,7 +207,7 @@ v1.0 03/06/24
     -underpromotions allowed as input by the user
     Qsearch makes evasions when in check, and else makes captures
         QSearch allows for illegal positions in order to speed up move generation
-        Despite no longer utilising iterative move evaluation, this framework is faster (and more accurate) than without any QSearch
+        Despite no longer utilising iterative move evaluation, this framework is faster and much more stable than without any QSearch
     QSearch Delta-pruning implemented, no longer investigating hopeless lines, far down in material
         10% speed boost to depths greater than 10 ply
 
@@ -219,19 +224,70 @@ v1.0 03/06/24
    10 ply     9   21.542  e2e4 e7e5 g1f3 g8f6 b1c3 f8d6 d2d4 e5d4 d1d4 e8g8 
    11 ply    35  391.061  g1f3 d7d5 e2e3 b8c6 d2d4 g8f6 f1e2 c8f5 e1g1 c6b4 c2c4 
 
+v1.1 17/01/2025
+    -Fixed accidental negation in move ordering bug which hindered black's move ordering
+        Massive 4x improvement to evaluation speed of depths 9+
+    Rudimentary ability to print pgn added is useful for debugging quiescient search
+    Using assumption that PSQT are equally good at static evaluation AND move ordering, we stop duplicate function calls to move_eval()
+        Saves 1.5% to depth 10
+    Fifty move rule implemented
+    3-fold repetition implemented
+        Doing this via the transposition table forced an 'always replace' scheme and made it unclear what to do with type 1 errors. This slowed down search (depth 10 ply 4.8s -> 5.8s)
+        Instead, doing this by just searching the history tree where applicable actually speeds up deeper searches
+    Revamped move ordering
+        Checks are likely to be good - improve search by 8% (Not always valid during Q search though)
+        Moves have 2 fields: static-, and material- evaluation allowing for greater control in move ordering
+    More liberal replacement scheme prioritises new entries
+        Subsequent depths appear to take ~5x longer than the last which is incredible!
+        Chess has a branching factor of ~35, and a perfect alpha beta algorithm takes sqrt(35) longer for each depth == 5.9x
+        We're outperforming theory here! (Because of the transposition table)
 
-Reupload to Github
+    DEPTH  EVAL  TIME(s)  BEST                                                                                                                                  
+    1 ply    46        0  d2d4
+    2 ply     0        0  d2d4 d7d5 
+    3 ply    37    0.001  d2d4 d7d5 g1f3
+    4 ply     0    0.001  d2d4 d7d5 g1f3 g8f6
+    5 ply    37    0.007  e2e4 d7d5 e4d5 d8d5 d2d4 
+    6 ply     1    0.025  e2e4 b8c6 d2d4 d7d5 e4d5 d8d5 
+    7 ply    38    0.086  e2e4 b8c6 d2d4 d7d5 e4d5 d8d5 g1f3 
+    8 ply     4    0.311  e2e4 b8c6 g1f3 g8f6 e4e5 f6g4 d2d4 d7d5 
+    9 ply    39    0.962  e2e4 b8c6 g1f3 g8f6 b1c3 d7d5 e4d5 f6d5 d2d4 
+   10 ply     9    4.836  e2e4 e7e5 g1f3 g8f6 b1c3 f8d6 d2d4 e5d4 d1d4 e8g8 
+   11 ply    35   15.983  d2d4 d7d5 g1f3 g8f6 e2e3 b8c6 f1e2 c8f5 e1g1 c6b4 
+   12 ply     3   65.933  e2e4 e7e5 g1f3 g8f6 b1c3 b8c6 f1b5 f8d6 d2d4 e5d4 f3d4 e8g8 
+   13 ply    31  308.004  d2d4 d7d5 c1f4 g8f6 e2e3 b8c6 b1c3 e7e6 g1f3 f8d6 f1d3 e8g8 
+   14 ply     6  998.332  d2d4 d7d5 g1f3 b8c6 b1c3 g8f6 e2e3 e7e6 f1d3 c6b4 e1g1 b4d3 d1d3
+
+v1.2 8/02/2025
+Quiet checks
+    Winning players look for mate
+    Advantaged and disadvantaged players look for check forks or development with tempo 
+        Only investigate a quiet check if it improves the static evaluation?
+    Losing players seek perpetual checks
+
+-enable quiet check generation in gen.c DONE
++3 more things: in search.c, the quiescent quiet check search
+                in update_check_data() to update check squares - I made it slower. Please fix it once I know what I'm doing
+                in do_move() to add info to Undo struct
+                in Undo struct to accomodate check squares
+                un undo_move() to pull info from Undo struct
+You must redo these steps^ to determine if quiet checks has improved search speed or not.
+
+reorder pawn moves to be generated first. Pawn captures are likely more common than good queen forks and heavy piece checkmates
+
+Remove age?
+Quiescent TT
+Endgame TB
+A compilation flag to remove all assert()
 TT size testing
 killer nodes
 null move
 evaluation bonuses
+Opening book?
 Version tester (pair bot against bot)
 Mochee_0
 
--Wouldn't it be awesome if Move->score had the psqt move values? save some time in move.c
--Use PSQT only for move ordering
-
 -Prolong checkmate against me as long as possible 
 
--don't save all-nodes to TT? You may set beta to the score that was saved at an all node, for faster beta cut off oc children
+-don't save all-nodes to TT? You may set beta to the score that was saved at an all node, for faster beta cut off of children
        

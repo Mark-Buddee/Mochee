@@ -10,16 +10,54 @@
 #include "inc/tt.h"
 #include "inc/tgui.h"
 
-void do_move(Board_s* const Board, const Move Move) {
-    assert(Move != NULL_MOVE);
-    int src = SRC(Move);
-    int dst = DST(Move);
-    int ppt = PPT(Move);
-    int spc = SPC(Move);
+// // Add the current board state to the Transposition Table, or increment the position frequency if it already exists
+// void inc_posFreq(Board_s* const Board) {
+
+//     // Position already exists in transposition table
+//     if(TT[Board->key % TT_ENTRIES].key == Board->key >> 32) { // This is --Almost-- the only key check of the whole program
+//         TT[Board->key % TT_ENTRIES].posFreq++; // increment
+//         return;
+//     }
+
+//     // Type-1 collsion between two nodes in the history tree
+//     // We prioritise the existing node and discard this new one
+//     // This rare edge case means we cannot assume that the current board state is always in the transposition
+//     // table without making some concessions + (rare) errors
+//     if(TT[Board->key % TT_ENTRIES].posFreq != 0) return;
+
+//     // Position does not exist in transposition table
+//     TTEntry_s NewEntry = {.key = Board->key >> 32, .move = NULL_MOVE, .scoreBound = BLANK_NODE, .posFreq = 1, .depth = 0, .age = 0};
+//     TT[Board->key % TT_ENTRIES] = NewEntry;
+
+//     return;
+// }
+
+// // Decrement the position frequency of the board state in the Transposition Table
+// void dec_posFreq(Board_s* const Board) {
+
+//     // Position may not exist in Transposition Table
+//     if(TT[Board->key % TT_ENTRIES].key != Board->key >> 32) {
+//         return;
+//         // TTEntry_s NewEntry = {.key = Board->key >> 32, .move = NULL_MOVE, .scoreBound = BLANK_NODE, .posFreq = 1, .depth = 0, .age = 0};
+//         // TT[Board->key % TT_ENTRIES] = NewEntry;
+//     }
+
+//     TT[Board->key % TT_ENTRIES].posFreq--; // decrement
+//     return;
+// }
+
+void do_move(Board_s* const Board, const Move_s* cur) {
+    assert(cur->move != NULL_MOVE);
+    int src = SRC(cur->move);
+    int dst = DST(cur->move);
+    int ppt = PPT(cur->move);
+    int spc = SPC(cur->move);
     int cpt  = Board->pieces[dst];
     int mvd  = Board->pieces[src];
     int side = Board->side;
     int originalCastlingRights = Board->castlingRights;
+
+    assert(Board->hisPly < MAX_GAME_PLYS);
 
     // assert(cpt != KING);
     // if(cpt == KING) {
@@ -30,12 +68,28 @@ void do_move(Board_s* const Board, const Move Move) {
     // }
 
     // Undo
-    Undo_s Undo = {Move, cpt, Board->castlingRights, Board->hundredPly, Board->enPas, Board->checkers, .kingBlockers[WHITE] = Board->kingBlockers[WHITE], .kingBlockers[BLACK] = Board->kingBlockers[BLACK], Board->staticEval, Board->key};
+    Undo_s Undo = {
+        .move = cur->move, 
+        .captured = cpt, 
+        .castlingRights = Board->castlingRights, 
+        .hundredPly = Board->hundredPly, 
+        .enPas = Board->enPas, 
+        .checkers = Board->checkers,  
+        .staticEval = Board->staticEval, 
+        .key = Board->key
+    };
+    for(int side = WHITE; side <= BLACK; side++) {
+        Undo.kingBlockers[side] = Board->kingBlockers[side];
+        for(int piece = PAWN; piece <= QUEEN; piece++) {
+            Undo.checkSquares[side][piece] = Board->checkSquares[side][piece];
+        }
+    }
     Board->Undos[Board->hisPly] = Undo;
 
     // Static evaluation
-    // assert(Move->)
-    Board->staticEval += move_eval(Board, Move);
+    // Board->staticEval += side == WHITE ? move_eval(Board, cur->move) : -move_eval(Board, cur->move);
+    int staticScore = cur->positionScore + cur->materialScore;
+    Board->staticEval += side == WHITE ? staticScore : -staticScore;
 
     // Regular piece movement
     if(cpt) remove_piece(Board, cpt, dst, !side);
@@ -77,7 +131,11 @@ void do_move(Board_s* const Board, const Move Move) {
     }
 
     // Update check metadata
-    update_check_data(Board, Move, mvd);
+    update_check_data(Board, cur->move, mvd);
+
+    // // Record frequency of this position for 3-fold repitition
+    // // Record the NEW position in the TT
+    // inc_posFreq(Board);
 }
 
 void undo_move(Board_s* const Board) {
@@ -89,6 +147,10 @@ void undo_move(Board_s* const Board) {
     int spc = SPC(move);
     int mvd = Board->pieces[dst];
     int side = Board->side;
+
+    // // Record frequency of this position for 3-fold repetition
+    // // Remove the OLD position from the TT
+    // dec_posFreq(Board);
 
     // Regular piece movement
     if(spc == PROMOTION) {
@@ -111,19 +173,13 @@ void undo_move(Board_s* const Board) {
     Board->hundredPly = Board->Undos[newHisPly].hundredPly;
     Board->enPas = Board->Undos[newHisPly].enPas;
     Board->checkers = Board->Undos[newHisPly].checkers;
-    Board->kingBlockers[WHITE] = Board->Undos[newHisPly].kingBlockers[WHITE];
-    Board->kingBlockers[BLACK] = Board->Undos[newHisPly].kingBlockers[BLACK];
+    for(int side = WHITE; side <= BLACK; side++) {
+        Board->kingBlockers[side] = Board->Undos[newHisPly].kingBlockers[side];
+        for(int piece = PAWN; piece <= QUEEN; piece++) {
+            Board->checkSquares[side][piece] = Board->Undos[newHisPly].checkSquares[side][piece];
+        }
+    }
     Board->staticEval = Board->Undos[newHisPly].staticEval;
     Board->side = !Board->side;
     Board->key = Board->Undos[newHisPly].key;
-
-    // // Update check metadata
-    // U64 srcDst64 = BIT(src) | BIT(dst);
-    // if(srcDst64 & Board->checkSquares[side][QUEEN])
-    //     update_checkSquares(Board, side);
-    // if(mvd == KING)
-    //     update_checkSquares(Board, !side);
-    // else if(srcDst64 & Board->checkSquares[!side][QUEEN])
-    //     update_checkSquares(Board, !side);
-
 }

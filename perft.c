@@ -10,16 +10,22 @@
 #include "inc/move.h"
 #include "inc/perft.h"
 #include "inc/tgui.h"
+#include "inc/search.h"
 
 unsigned long long num_nodes(Board_s* const Board, int depth) {
+
     // if(depth == 0) return 0;
+
     Move_s List[MAX_MOVES];
     Move_s* cur = List;
     Move_s* end = gen_legal(Board, List);
+    score_moves(Board, List, end, NULL_MOVE);
+
     if(depth == 1) return end - List;
+
     unsigned long long numMoves = 0;
     while(cur != end) {
-        do_move(Board, cur->move);
+        do_move(Board, cur);
         numMoves += num_nodes(Board, depth - 1);
         undo_move(Board);
         cur++;

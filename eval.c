@@ -97,7 +97,9 @@ int static_eval(const Board_s* const Board) {
     return eval;
 }
 
-int move_eval(const Board_s* const Board, const Move move) {
+// Greater move evlauation -> a better move
+// This means both white and black evaluate their best moves more POSITIVELY
+int move_position_eval(const Board_s* const Board, const Move move) {
     int src = SRC(move);
     int dst = DST(move);
     int ppt = PPT(move);
@@ -110,18 +112,14 @@ int move_eval(const Board_s* const Board, const Move move) {
     eval -= get_psqt(mvd, side, src);
     if(spc == PROMOTION) {
         eval += get_psqt(KNIGHT + ppt, side, dst);
-        eval -= PAWN_VAL;
-        eval += get_value(KNIGHT + ppt);
     } else {
         eval += get_psqt(mvd, side, dst);
     }
-    if(cpt) {
+    if(cpt) { // cpt == 0 on en passant
         eval += get_psqt(cpt, !side, dst);
-        eval += get_value(cpt);
     }
     if(spc == EN_PASSANT) {
         eval += get_psqt(PAWN, !side, enp_cpt[dst]);
-        eval += get_value(PAWN);
     } else if(spc == CASTLING) {
         int castle = src < dst ? side == WHITE ? WHITE_OO  : BLACK_OO
                                : side == WHITE ? WHITE_OOO : BLACK_OOO;
@@ -129,6 +127,27 @@ int move_eval(const Board_s* const Board, const Move move) {
         eval += get_psqt(ROOK, side, rook_dst[castle]);
     }
 
-    // return eval;
-    return side == WHITE ? eval : -eval;
+    return eval;
+}
+
+int move_material_eval(const Board_s* const Board, const Move move) {
+    int dst = DST(move);
+    int ppt = PPT(move);
+    int spc = SPC(move);
+    int cpt  = Board->pieces[dst];
+
+    int eval = 0;
+
+    if(spc == PROMOTION) {
+        eval -= PAWN_VAL;
+        eval += get_value(KNIGHT + ppt);
+    }
+    if(cpt) {
+        eval += get_value(cpt);
+    }
+    if(spc == EN_PASSANT) {
+        eval += get_value(PAWN);
+    }
+
+    return eval;
 }

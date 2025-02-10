@@ -110,6 +110,7 @@ void ParseGo(char* line, Board_s *Board) {
     printf("bestmove ");
     print_move(bestMove);
     printf("\n");
+    inc_age();
 }
 
 
@@ -137,7 +138,6 @@ void ParsePosition(char* line, Board_s* Board) {
     }
 
 	ptrChar = strstr(line, "moves");
-	Move move = NULL_MOVE;
 
 	if(ptrChar != NULL) {
         ptrChar += 6;
@@ -149,21 +149,23 @@ void ParsePosition(char* line, Board_s* Board) {
             Move_s List[MAX_MOVES];
             Move_s* cur = List;
             Move_s* end = gen_legal(Board, List);
+            score_moves(Board, List, end, NULL_MOVE);
+
             while(cur != end) {
                 // printf("PPT: %d\n", PPT(cur->move));
                 if(SRC(cur->move) == src && DST(cur->move) == dst && PPT(cur->move) == ppt) {
-                    move = cur->move;
+                    // move = cur->move;
                     // MoveSToMake->moveVal = move_eval(&Board, MoveSToMake->move);
                     break;
                 }
                 cur++;
             }
-            if(move == NULL_MOVE) {
+            if(cur->move == NULL_MOVE) {
                 printf("move not found.\n");
                 break;
             }
 
-            do_move(Board, move);
+            do_move(Board, cur);
 
             while(*ptrChar && *ptrChar!= ' ') ptrChar++;
             ptrChar++;

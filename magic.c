@@ -58,7 +58,7 @@ U64* atkPtr[2][NUM_SQUARES];
 void init_rand(void) {
     // time_t t;
     // srand((unsigned) time(&t));
-    srand(510474708);
+    srand(510474708); // TODO: random seed makes the engine unexploitable
 }
 
 U64 rand64(void) {

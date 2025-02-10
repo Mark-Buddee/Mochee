@@ -61,13 +61,20 @@ void print_board(const Board_s* const Board, int flipped) {
 }
 
 void print_detailed(const Board_s* const Board, int flipped) {
+
+    // int posFreq = 0;
+    // if(TT[Board->key % TT_ENTRIES].key == Board->key >> 32) {
+    //     posFreq = TT[Board->key % TT_ENTRIES].posFreq;
+    // }
+
     print_board(Board, flipped);
     int side = Board->side;
     printf("\n");
     printf("side..............%s\n", Board->side == WHITE ? "WHITE" : "BLACK");
     printf("hisPly............%d\n", Board->hisPly);
     printf("hundredPly........%d\n", Board->hundredPly);
-    printf("castlingRights....%.8x\n", Board->castlingRights);
+    // printf("posFreq...........%d\n", posFreq);
+    printf("castlingRights....%.1x\n", Board->castlingRights);
     printf("staticEval........%d\n", Board->staticEval);
     printf("key...............%.16llx\n", Board->key);
     printf("\n");
@@ -92,6 +99,57 @@ void print_detailed(const Board_s* const Board, int flipped) {
     printf("blackBlockers.....%.16llx\n", Board->kingBlockers[BLACK]);
 }
 
+// 1. Pe2e4 Pd7d5 2.Pe4d5 qd8d5 3. Ng1f3 Nb8c6
+void print_pgn(const Board_s* const Board) {
+    char start_fen_s[] = START_FEN; // Must be changed every time you change the start position and want to debug
+    // char start_fen_s[] = "8/8/7r/K6k/1Q6/8/8/8 w - - 0 1";
+    Board_s SimBoard = board_init(start_fen_s);
+    
+    int len = Board->hisPly;
+    for(int i = 1; i <= len; i++) {
+        if(i % 2) printf("%d. ", (i+1)/2);
+        Undo_s Undo = Board->Undos[i-1];
+        Move Move = Undo.move;
+
+        int src = SRC(Move);
+        int mvd = SimBoard.pieces[src];
+
+        Move_s cur = {.move = Move, .positionScore = move_position_eval(&SimBoard, Move), .materialScore = move_material_eval(&SimBoard, Move), .orderingBias = 0};
+        do_move(&SimBoard, &cur);
+        // print_board(&SimBoard, WHITE);
+
+        if(!(SPC(Move) == PROMOTION)) printf("%c", PIECE_CHARS[mvd]); // Don't print P for pawn when promoting for lichess standards
+        print_move(Move);
+
+        // Capitalise the promoting piece q -> Q for lichess standards
+        if(SPC(Move) == PROMOTION) {
+            printf("\033[D"); // Move cursor back one space
+            int ppt = KNIGHT + PPT(Move);
+            switch(ppt) {
+                case KNIGHT:
+                    printf("N");
+                    break;
+                case BISHOP:
+                    printf("B");
+                    break;
+                case ROOK:
+                    printf("R");
+                    break;
+                case QUEEN:
+                    printf("Q");
+                    break;
+                default:
+                    printf("print_pgn unexpected input. Exiting...");
+                    exit(1);
+            }
+        }
+
+        if(SimBoard.checkers) printf("+");
+        printf(" ");
+    }
+    printf("\n");
+}
+
 void print_variation(Board_s* const Board, int maxDepth) {
 
     TTEntry_s Entry = TT[Board->key % TT_ENTRIES];
@@ -105,7 +163,8 @@ void print_variation(Board_s* const Board, int maxDepth) {
     
     if(maxDepth == 1) return;
 
-    do_move(Board, bestMove);
+    Move_s cur = {.move = bestMove, .positionScore = move_position_eval(Board, bestMove), .materialScore = move_material_eval(Board, bestMove), .orderingBias = 0};
+    do_move(Board, &cur);
     print_variation(Board, maxDepth - 1);
     undo_move(Board);
 
@@ -113,6 +172,7 @@ void print_variation(Board_s* const Board, int maxDepth) {
 }
 
 int str2src(char string[]) {
+    // TODO: could add guard rails here
     int file = string[0] - 'a';
     int rank = atoi(++string) - 1;
     return FR(file, rank);
@@ -225,14 +285,14 @@ void console(void) {
                 " moves <depth>\n"
                 " perft <depth>\n"
                 " eval  <depth>\n"
-                " play  <depth>\n"
+                " play  <time (ms)>\n"
                 " fen   <fen>\n"
-                "<move>\n");
+                " <move>\n");
 
         } else if (strcmp(tok, reset_s) == 0) {
             strcpy(start_fen_s, START_FEN);
-            Board = board_init(start_fen_s);
             init_tt();
+            Board = board_init(start_fen_s);
             print_board(&Board, flipped);
 
         } else if (strcmp(tok, test_s) == 0) {
@@ -251,13 +311,14 @@ void console(void) {
             Move_s* cur = List;
             // Move_s* end = gen_all(&Board, List, Board.side, CAPTURES);
             Move_s* end = gen_legal(&Board, List);
+            score_moves(&Board, List, end, NULL_MOVE);
+
             long long unsigned totalNodes = 0;
             while(cur != end) {
-                Move move = cur->move;
-                do_move(&Board, cur->move);
+                do_move(&Board, cur);
                 unsigned long long numNodes = num_nodes(&Board, depth);
                 totalNodes += numNodes;
-                print_move(move);
+                print_move(cur->move);
                 printf(" %llu\n", numNodes);
                 // printf("\n");
                 undo_move(&Board);
@@ -298,19 +359,19 @@ void console(void) {
             end = clock();
             double dt = (double)(end - start) / CLOCKS_PER_SEC;
 
-
-            do_move(&Board, bestMove);
-            inc_age();
+            Move_s cur = {.move = bestMove, .positionScore = move_position_eval(&Board, bestMove), .materialScore = move_material_eval(&Board, bestMove), .orderingBias = 0};
+            do_move(&Board, &cur);
 
             // printf("doing %s%s\n", bestSrc, bestDst);
             // assert(TT[Board.key % TT_ENTRIES].key == Board.key >> 32);
-            int eval = SCORE(TT[Board.key % TT_ENTRIES].scoreBound);
+            int eval = SCORE(TT[Board.key % TT_ENTRIES].scoreBound); // TODO: Explicitly cast this to int16_t 
             int trueEval = Board.side == WHITE ? eval : -eval;
-
-            printf("\nEval: %5hu bestMove: ", trueEval);
+            // printf("%d, %d, %d\n", TT[Board.key % TT_ENTRIES].scoreBound, eval, trueEval);
+            printf("\nEval: %d bestMove: ", trueEval);
             print_move(bestMove);
             printf(" time:%7g\n", dt);
             print_board(&Board, flipped);
+            inc_age(); // Important to be done after iterative deepening
 
         } else if (strcmp(tok, flip_s) == 0) {
             flipped = !flipped;
@@ -319,8 +380,8 @@ void console(void) {
         } else if (strcmp(tok, fen_s) == 0) {
             tok = strtok(NULL, "\0");
             assert(tok != NULL);
-            Board = board_init(tok);
             init_tt();
+            Board = board_init(tok);
             print_board(&Board, flipped);
 
         } else {
@@ -328,14 +389,16 @@ void console(void) {
             int src = str2src(tok++);
             int dst = str2src(++tok);
 
-            Move MoveToMake = NULL_MOVE;
             Move_s List[MAX_MOVES];
             Move_s* cur = List;
             Move_s* end = gen_legal(&Board, List);
+            score_moves(&Board, List, end, NULL_MOVE);
+
+            Move_s* MoveToMake = NULL; 
             while(cur != end) {
                 // printf("PPT: %d\n", PPT(cur->move));
                 if(SRC(cur->move) == src && DST(cur->move) == dst && PPT(cur->move) == ppt) {
-                    MoveToMake = cur->move;
+                    MoveToMake = cur;
                     // MoveSToMake->moveVal = move_eval(&Board, MoveSToMake->move);
                     break;
                 }
@@ -346,13 +409,13 @@ void console(void) {
             // end = gen_all(&Board, List2, Board.side, CAPTURES);
             // while(cur != end) {
             //     if(SRC(cur->move) == src && DST(cur->move) == dst) {
-            //         MoveToMake = cur->move;
+            //         // change this to commented out //MoveToMake = cur->move;
             //         // MoveSToMake->moveVal = move_eval(&Board, MoveSToMake->move);
             //         break;
             //     }
             //     cur++;
             // }
-            if(MoveToMake != NULL_MOVE) {
+            if(MoveToMake != NULL) {
                 do_move(&Board, MoveToMake);
                 inc_age();
                 print_board(&Board, flipped);

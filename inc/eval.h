@@ -11,7 +11,9 @@
 
 int static_eval(const Board_s* const Board);
 
-int move_eval(const Board_s* const Board, const Move move);
+int move_position_eval(const Board_s* const Board, const Move move);
+
+int move_material_eval(const Board_s* const Board, const Move move);
 
 int get_value(int pieceType);
 

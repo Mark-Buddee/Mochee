@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 #define NAME                            "Mochee"
-#define VERSION                         "v1.0"
+#define VERSION                         "v1.1"
 #define NAME_DESC                       "Mother of Chess Engines\nCopyright (C) Chonker Bonker Corporation. All rights reserved."
 #define AUTHOR                          "Buddee890"
 
@@ -12,10 +12,10 @@
 #define BUFF_SIZE                       255
 
 #define START_FEN                       "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-#define MAX_GAME_PLYS                   512 // 5898 if 100 ply == draw, 8848.5 if 150 ply == draw
+#define MAX_GAME_PLYS                   2047 // 5898 if 100 ply == draw, 8848.5 if 150 ply == draw
 #define MAX_MOVES                       218
 #define MAX_DEPTH                       255
-#define MAX_QUIESCE_DEPTH               255   // 1 := no quiescient search
+#define MAX_QUIESCE_DEPTH               -1   // 0 := no quiescient search
 
 enum {
     WHITE, BLACK, BOTH,
@@ -89,6 +89,12 @@ enum {
     NORTH_WEST = NORTH + WEST
 };
 
+// Fifty move rule
+// Chesscom uses 50 moves automatic draw, lichess uses 75 moves automatic draw with the ability for either side to claim a draw after 50 moves
+// If I'm playing perfect chess, I can assume the losing side to take a draw after 50 moves
+// Meaning I employ the 50 move draw even though we are playing on lichess
+#define HUNDRED_PLIES                   100 // fifty moves
+
 #define RANK_1BB                        0x00000000000000FFULL
 #define RANK_2BB                        (RANK_1BB << NUM_FILES)
 #define RANK_3BB                        (RANK_2BB << NUM_FILES)
@@ -133,7 +139,9 @@ typedef uint16_t Move;
 
 typedef struct {
     Move move;
-    int score;
+    int materialScore;
+    int positionScore;
+    int orderingBias;
 } Move_s;
 
 typedef struct {
@@ -143,6 +151,7 @@ typedef struct {
 	int hundredPly;
 	U64 enPas;
     U64 checkers;
+    U64 checkSquares[NUM_SIDES][NUM_PIECES];
     U64 kingBlockers[NUM_SIDES];
     int staticEval;
     U64 key;
@@ -160,7 +169,8 @@ typedef struct {
     U64 byColour[NUM_SIDES];
 
     U64 checkers;
-    U64 checkSquares[NUM_SIDES][NUM_PIECES];
+    U64 checkSquares[NUM_SIDES][NUM_PIECES]; // checkSquares[SIDE][EMPTY or KING] are undefined
+    // But apparently it's part of the C standard to initialise undefined struct fields with 0 when using a designated initialiser!!! Awesome news
     U64 kingBlockers[NUM_SIDES];
 
     U64 key;
