@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stdio.h>
+#define NDEBUG
 #include <assert.h>
 #include "inc/defs.h"
 #include "inc/magic.h"

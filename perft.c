@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <time.h>
+#define NDEBUG
 #include <assert.h>
 #include "inc/defs.h"
 #include "inc/board.h"

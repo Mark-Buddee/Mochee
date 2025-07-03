@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#define NDEBUG
 #include <assert.h>
 #include "inc/defs.h"
 #include "inc/bitboard.h"

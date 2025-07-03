@@ -240,25 +240,31 @@ v1.1 17/01/2025
     More liberal replacement scheme prioritises new entries
         Subsequent depths appear to take ~5x longer than the last which is incredible!
         Chess has a branching factor of ~35, and a perfect alpha beta algorithm takes sqrt(35) longer for each depth == 5.9x
-        We're outperforming theory here! (Because of the transposition table)
+        We're outperforming a theoretically perfect alpha-beta algorithm here! (Because of the transposition table)
 
-    DEPTH  EVAL  TIME(s)  BEST                                                                                                                                  
-    1 ply    46        0  d2d4
-    2 ply     0        0  d2d4 d7d5 
-    3 ply    37    0.001  d2d4 d7d5 g1f3
-    4 ply     0    0.001  d2d4 d7d5 g1f3 g8f6
-    5 ply    37    0.007  e2e4 d7d5 e4d5 d8d5 d2d4 
-    6 ply     1    0.025  e2e4 b8c6 d2d4 d7d5 e4d5 d8d5 
-    7 ply    38    0.086  e2e4 b8c6 d2d4 d7d5 e4d5 d8d5 g1f3 
-    8 ply     4    0.311  e2e4 b8c6 g1f3 g8f6 e4e5 f6g4 d2d4 d7d5 
-    9 ply    39    0.962  e2e4 b8c6 g1f3 g8f6 b1c3 d7d5 e4d5 f6d5 d2d4 
-   10 ply     9    4.836  e2e4 e7e5 g1f3 g8f6 b1c3 f8d6 d2d4 e5d4 d1d4 e8g8 
-   11 ply    35   15.983  d2d4 d7d5 g1f3 g8f6 e2e3 b8c6 f1e2 c8f5 e1g1 c6b4 
-   12 ply     3   65.933  e2e4 e7e5 g1f3 g8f6 b1c3 b8c6 f1b5 f8d6 d2d4 e5d4 f3d4 e8g8 
-   13 ply    31  308.004  d2d4 d7d5 c1f4 g8f6 e2e3 b8c6 b1c3 e7e6 g1f3 f8d6 f1d3 e8g8 
-   14 ply     6  998.332  d2d4 d7d5 g1f3 b8c6 b1c3 g8f6 e2e3 e7e6 f1d3 c6b4 e1g1 b4d3 d1d3
+    DEPTH  EVAL  TIME(s)  BEST                                                                                                                                             
+    1 ply    46        0  d2d4 
+    2 ply     0    0.001  d2d4 d7d5
+    3 ply    37        0  d2d4 d7d5 g1f3
+    4 ply     0        0  d2d4 d7d5 g1f3 g8f6
+    5 ply    37    0.004  e2e4 d7d5 e4d5 d8d5 d2d4 
+    6 ply     1     0.02  e2e4 b8c6 d2d4 d7d5 e4d5 d8d5 
+    7 ply    38    0.061  e2e4 b8c6 d2d4 d7d5 e4d5 d8d5 g1f3 
+    8 ply     4    0.284  e2e4 b8c6 g1f3 g8f6 e4e5 f6g4 d2d4 d7d5 
+    9 ply    39    0.788  e2e4 b8c6 g1f3 g8f6 b1c3 d7d5 e4d5 f6d5 d2d4 
+   10 ply     9    4.316  e2e4 e7e5 g1f3 g8f6 b1c3 f8d6 d2d4 e5d4 d1d4 e8g8 
+   11 ply    35   14.417  d2d4 d7d5 g1f3 g8f6 e2e3 b8c6 f1e2 c8f5 e1g1 c6b4 
+   12 ply     3   63.926  e2e4 e7e5 g1f3 g8f6 b1c3 b8c6 f1b5 f8d6 d2d4 e5d4 f3d4 e8g8 
+   13 ply    31  278.538  d2d4 d7d5 c1f4 g8f6 e2e3 b8c6 b1c3 e7e6 g1f3 f8d6 f1d3 e8g8 
+   14 ply     6  916.037  d2d4 d7d5 g1f3 b8c6 b1c3 g8f6 e2e3 e7e6 f1d3 c6b4 e1g1 b4d3 d1d3
 
-v1.2 8/02/2025
+Todo:
+REenable asserts, but make the process quicker such as changing just one line. Perhaps a header file for ALL of the includes that I need.
+Quiescent TT
+Endgame TB
+Pawn structure hashing
+killer nodes
+
 Quiet checks
     Winning players look for mate
     Advantaged and disadvantaged players look for check forks or development with tempo 
@@ -274,13 +280,8 @@ Quiet checks
 You must redo these steps^ to determine if quiet checks has improved search speed or not.
 
 reorder pawn moves to be generated first. Pawn captures are likely more common than good queen forks and heavy piece checkmates
-
 Remove age?
-Quiescent TT
-Endgame TB
-A compilation flag to remove all assert()
 TT size testing
-killer nodes
 null move
 evaluation bonuses
 Opening book?

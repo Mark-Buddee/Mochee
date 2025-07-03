@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#define NDEBUG
 #include <assert.h>
 #include "inc/defs.h"
 #include "inc/move.h"
@@ -59,7 +60,7 @@ void do_move(Board_s* const Board, const Move_s* cur) {
 
     assert(Board->hisPly < MAX_GAME_PLYS);
 
-    // assert(cpt != KING);
+    assert(cpt != KING);
     // if(cpt == KING) {
     //     undo_move(Board);
     //     print_detailed(Board, Board->side);
@@ -78,12 +79,12 @@ void do_move(Board_s* const Board, const Move_s* cur) {
         .staticEval = Board->staticEval, 
         .key = Board->key
     };
-    for(int side = WHITE; side <= BLACK; side++) {
-        Undo.kingBlockers[side] = Board->kingBlockers[side];
-        for(int piece = PAWN; piece <= QUEEN; piece++) {
-            Undo.checkSquares[side][piece] = Board->checkSquares[side][piece];
-        }
-    }
+    // for(int side = WHITE; side <= BLACK; side++) {
+    //     Undo.kingBlockers[side] = Board->kingBlockers[side];
+    //     for(int piece = PAWN; piece <= QUEEN; piece++) {
+    //         Undo.checkSquares[side][piece] = Board->checkSquares[side][piece];
+    //     }
+    // }
     Board->Undos[Board->hisPly] = Undo;
 
     // Static evaluation
@@ -175,9 +176,9 @@ void undo_move(Board_s* const Board) {
     Board->checkers = Board->Undos[newHisPly].checkers;
     for(int side = WHITE; side <= BLACK; side++) {
         Board->kingBlockers[side] = Board->Undos[newHisPly].kingBlockers[side];
-        for(int piece = PAWN; piece <= QUEEN; piece++) {
-            Board->checkSquares[side][piece] = Board->Undos[newHisPly].checkSquares[side][piece];
-        }
+        // for(int piece = PAWN; piece <= QUEEN; piece++) {
+        //     Board->checkSquares[side][piece] = Board->Undos[newHisPly].checkSquares[side][piece];
+        // }
     }
     Board->staticEval = Board->Undos[newHisPly].staticEval;
     Board->side = !Board->side;

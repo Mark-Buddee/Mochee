@@ -151,7 +151,7 @@ typedef struct {
 	int hundredPly;
 	U64 enPas;
     U64 checkers;
-    U64 checkSquares[NUM_SIDES][NUM_PIECES];
+    // U64 checkSquares[NUM_SIDES][NUM_PIECES];
     U64 kingBlockers[NUM_SIDES];
     int staticEval;
     U64 key;

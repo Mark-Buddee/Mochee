@@ -47,7 +47,7 @@ int legal(const Board_s* Board, const Move move) {
     if(spc == EN_PASSANT) {
         int side = Board->side;
         int ksq = lsb(piece(Board, KING, side));
-        // assert(ksq);
+        assert(ksq);
         U64 obstacles = (Board->byType[ALL] ^ BIT(src) ^ BIT(enp_cpt[dst])) | BIT(dst);
 
         return !(gen_bishop_magic_attacks(ksq, obstacles) & (piece(Board, QUEEN, !side) | piece(Board, BISHOP, !side)))

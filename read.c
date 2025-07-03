@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#define NDEBUG
 #include <assert.h>
 
 #include "inc/defs.h"
