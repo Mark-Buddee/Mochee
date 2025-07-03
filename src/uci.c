@@ -2,16 +2,16 @@
 #include <string.h>
 #include <time.h>
 #include <stdlib.h>
-#include "inc/uci.h"
-#include "inc/defs.h"
-#include "inc/tt.h"
-#include "inc/board.h"
-#include "inc/tgui.h"
-#include "inc/search.h"
-#include "inc/move.h"
-#include "inc/gen.h"
-#include "inc/magic.h"
-#include "inc/init.h"
+#include "uci.h"
+#include "defs.h"
+#include "tt.h"
+#include "board.h"
+#include "tgui.h"
+#include "search.h"
+#include "move.h"
+#include "gen.h"
+#include "magic.h"
+#include "init.h"
 
 // go depth 6 wtime 180000 btime 100000 binc 1000 winc 1000 movetime 1000 movestogo 40
 void ParseGo(char* line, Board_s *Board) {
