@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#define NDEBUG
 #include <assert.h>
 #include "defs.h"
 #include "move.h"
@@ -60,7 +59,7 @@ void do_move(Board_s* const Board, const Move_s* cur) {
 
     assert(Board->hisPly < MAX_GAME_PLYS);
 
-    assert(cpt != KING);
+    // assert(cpt != KING); // Not a valid assert because of quiesce()
     // if(cpt == KING) {
     //     undo_move(Board);
     //     print_detailed(Board, Board->side);

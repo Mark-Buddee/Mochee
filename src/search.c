@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
-#define NDEBUG
 #include <assert.h>
 #include "defs.h"
 #include "move.h"

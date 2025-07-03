@@ -2,10 +2,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <conio.h>
-#define NDEBUG
 #include <assert.h>
 #include <time.h>
-
 #include "defs.h"
 #include "tgui.h"
 #include "board.h"

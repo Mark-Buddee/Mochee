@@ -1,6 +1,5 @@
 #include <stdlib.h>
 #include <stdio.h>
-#define NDEBUG
 #include <assert.h>
 #include <time.h>
 #include <string.h>

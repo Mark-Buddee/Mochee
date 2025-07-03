@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#define NDEBUG
 #include <assert.h>
 #include "defs.h"
 #include "read.h"

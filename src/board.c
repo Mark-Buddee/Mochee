@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <math.h>
-#define NDEBUG
 #include <assert.h>
 #include "defs.h"
 #include "board.h"
