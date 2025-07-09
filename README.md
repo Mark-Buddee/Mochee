@@ -1,5 +1,5 @@
 
-# **Mochee** [ MOH-chee ] Mother of Chess Engines
+# **Mochee** ( MO-chee ) Mother of Chess Engines
 
 Mochee is a UCI chess engine written just for fun in C. It evaluates positions based on only material count and simple piece-square-tables, and so relies heavily on an efficient search routine. Designed and written by Buddee890, with inspiration from MisterQueen, and Stockfish.
 
