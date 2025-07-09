@@ -1,0 +1,38 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "build",
+			"type": "cppbuild",
+			"command": "gcc",
+			"args": [
+				"-fdiagnostics-color=always",
+				"-g",
+				"-O3",
+				"-DNDEBUG",
+				"-Iinc",
+			    "src/*.c",
+				"-o",
+				"mochee.exe",
+				"-lm",
+				// "-fsanitize=address",
+				// "-fsanitize=undefined",
+				"-Wunused",
+				"-Wall",
+				"-Wextra",
+				"-Iinclude"
+			],
+		   "options": {
+			   "cwd": "${workspaceFolder}"
+		   },
+			"problemMatcher": [
+				"$gcc"
+			],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+		   "detail": "compiler: gcc"
+		}
+	]
+}
