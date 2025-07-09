@@ -11,7 +11,7 @@
 				"-O3",
 				"-DNDEBUG",
 				"-Iinc",
-			    "src/*.c",
+				"src/*.c",
 				"-o",
 				"mochee.exe",
 				"-lm",
