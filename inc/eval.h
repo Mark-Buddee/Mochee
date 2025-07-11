@@ -9,14 +9,6 @@
 #define INF         8191 // largest unsigned 14 bit number
 #define KING_VAL    INF - MAX_DEPTH
 
-int static_eval(const Board_s* const Board);
-
-int move_position_eval(const Board_s* const Board, const Move move);
-
-int move_material_eval(const Board_s* const Board, const Move move);
-
-int get_value(int pieceType);
-
 // static const int piece_val[NUM_PIECES] = {
 //     0, 100, 280, 320, 479, 929, 60000
 // }
@@ -147,5 +139,10 @@ static const int king_psqt[2][64] = {
          17,  30,   7, -14,   6,  -1,  40,  18  // white c1 and black c8 were -3
     } 
 };
+
+int static_eval(const Board_s* const Board);
+int move_position_eval(const Board_s* const Board, const Move move);
+int move_material_eval(const Board_s* const Board, const Move move);
+int get_value(int pieceType);
 
 #endif

@@ -14,6 +14,6 @@ void remove_piece(Board_s* const Board, const int pieceType, const int square, c
 void move_piece(Board_s* const Board, const int pieceType, const int src, const int dst, const int side);
 int isLegal(const Board_s* const Board);
 
-Board_s board_init(char* fen);
+Board_s board_init(const char* fen);
 
 #endif

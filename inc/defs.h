@@ -181,5 +181,6 @@ typedef struct {
 } Board_s;
 
 static const char PIECE_CHARS[] = ".PNBRQK-.pnbrqk-"; // TODO: get this shit out of here
+extern Board_s Board;
 
 #endif
