@@ -24,6 +24,4 @@
 
 void uci(void);
 
-void is_ready();
-
 #endif
