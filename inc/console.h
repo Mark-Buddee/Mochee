@@ -1,5 +1,5 @@
-#ifndef TGUI_H
-#define TGUI_H
+#ifndef CONSOLE_H
+#define CONSOLE_H
 
 #define BACK_SPACE   "\033[D"
 #define LINE_START   "\033[F"
@@ -18,7 +18,6 @@ int str2src(char string[]);
 int get_ppt(char string[]);
 void print_move(Move move);
 
-int tgui_main(void);
 void console(void);
 
 #endif

@@ -4,7 +4,7 @@
 #include "defs.h"
 #include "bitboard.h"
 #include "magic.h"
-#include "tgui.h"
+#include "console.h"
 
 U64 pawn_attacks[NUM_SIDES][NUM_SQUARES];
 U64 pseudo_attacks[NUM_PIECES][NUM_SQUARES]; // Don't use for ALL

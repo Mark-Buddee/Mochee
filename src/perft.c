@@ -9,7 +9,7 @@
 #include "gen.h"
 #include "move.h"
 #include "perft.h"
-#include "tgui.h"
+#include "console.h"
 #include "search.h"
 
 unsigned long long num_nodes(Board_s* const Board, int depth) {

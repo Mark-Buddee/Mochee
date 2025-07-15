@@ -13,7 +13,7 @@
 				"-Iinc",
 				"-Ideps/tinycthread",
 			    "src/*.c",
-			    "deps/tinycthread/tinycthread.c",
+			    "deps/tinycthread/*.c",
 				"-o",
 				"mochee.exe",
 				"-lm",

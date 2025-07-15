@@ -6,7 +6,7 @@
 #include "defs.h"
 #include "magic.h"
 #include "bitboard.h"
-#include "tgui.h"
+#include "console.h"
 
 enum {BISHOP_IDX, ROOK_IDX};
 const int magic_shift[2][64] = {

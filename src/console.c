@@ -5,7 +5,7 @@
 #include <assert.h>
 #include <time.h>
 #include "defs.h"
-#include "tgui.h"
+#include "console.h"
 #include "board.h"
 #include "gen.h"
 #include "move.h"
@@ -89,11 +89,11 @@ void print_detailed(const Board_s* const Board, int flipped) {
     printf("kings.............%.16llx\n", Board->byType[KING]);
     printf("\n");
     printf("checkers..........%.16llx\n", Board->checkers);
-    printf("pawnChecks........%.16llx\n", Board->checkSquares[side][PAWN]);
-    printf("knightChecks......%.16llx\n", Board->checkSquares[side][KNIGHT]);
-    printf("bishopChecks......%.16llx\n", Board->checkSquares[side][BISHOP]);
-    printf("rookChecks........%.16llx\n", Board->checkSquares[side][ROOK]);
-    printf("queenChecks.......%.16llx\n", Board->checkSquares[side][QUEEN]);
+    // printf("pawnChecks........%.16llx\n", Board->checkSquares[side][PAWN]);
+    // printf("knightChecks......%.16llx\n", Board->checkSquares[side][KNIGHT]);
+    // printf("bishopChecks......%.16llx\n", Board->checkSquares[side][BISHOP]);
+    // printf("rookChecks........%.16llx\n", Board->checkSquares[side][ROOK]);
+    // printf("queenChecks.......%.16llx\n", Board->checkSquares[side][QUEEN]);
     printf("whiteBlockers.....%.16llx\n", Board->kingBlockers[WHITE]);
     printf("blackBlockers.....%.16llx\n", Board->kingBlockers[BLACK]);
 }
@@ -122,7 +122,7 @@ void print_pgn(const Board_s* const Board) {
 
         // Capitalise the promoting piece q -> Q for lichess standards
         if(SPC(Move) == PROMOTION) {
-            printf("\033[D"); // Move cursor back one space
+            printf(BACK_SPACE);
             int ppt = KNIGHT + PPT(Move);
             switch(ppt) {
                 case KNIGHT:
@@ -237,41 +237,34 @@ void print_move(Move move) {
 }
 
 void console(void) {
-    printf("\033[F");
-    // printf("\033[2J");
+
     printf("Entering console mode. ");
     printf("Type 'help' for a list of commands\n\n");
     init_all();
 
-    char start_fen_s[] = START_FEN;
-    Board_s Board = board_init(start_fen_s);
-    // Board_s Board = board_init(START_FEN);
+    Board = board_init(START_FEN);
     int flipped = Board.side;
     print_board(&Board, flipped);
     printf("\n");
+
     char line[BUFF_SIZE];
 
-    //Commands
-    char test_s[] = "test", help_s[] = "help", reset_s[] = "reset", print_s[] = "print", board_s[] = "board", moves_s[] = "moves", undo_s[] = "undo", perft_s[] = "perft", eval_s[] = "eval", play_s[] = "play", flip_s[] = "flip", fen_s[] = "fen", end_s[] = "end";
-    // 255 Empty array. Use memcpy here instead duh
-    char empty_s[] = "                                                                                                                                                                                                                                                                ";
-
     while(1) {
-        // Detect checkmate
-        Move_s List[MAX_MOVES];
-        if(gen_legal(&Board, List) == List) {
-            if(Board.checkers) printf("Checkmate!\n");
-            else printf("Stalemate!");
-            // exit(1);
-        }
+        // // Detect checkmate
+        // Move_s List[MAX_MOVES];
+        // if(gen_legal(&Board, List) == List) {
+        //     if(Board.checkers) printf("Checkmate!\n");
+        //     else printf("Stalemate!");
+        //     // exit(1);
+        // }
 
         fgets(line, BUFF_SIZE, stdin);
-        printf("\033[F%s\033[F", empty_s); // removes previous line, resets cursor
+        // printf("%s%s%s", LINE_START, empty_s, LINE_START); // removes previous line, resets cursor
         line[strcspn(line, "\n")] = ' '; // removes newline character from end
         char* tok = strtok(line, " ");
         assert(tok != NULL);
 
-        if(strcmp(tok, help_s) == 0) {
+        if(strcmp(tok, "help") == 0) {
             printf(
                 " help\n"
                 " reset\n"
@@ -288,22 +281,23 @@ void console(void) {
                 " fen   <fen>\n"
                 " <move>\n");
 
-        } else if (strcmp(tok, reset_s) == 0) {
-            strcpy(start_fen_s, START_FEN);
+        } else if (strcmp(tok, "reset") == 0) {
+            // strcpy(start_fen_s, START_FEN);
             init_tt();
-            Board = board_init(start_fen_s);
+            // Board = board_init(start_fen_s);
+            Board = board_init(START_FEN);
             print_board(&Board, flipped);
 
-        } else if (strcmp(tok, test_s) == 0) {
+        } else if (strcmp(tok, "test") == 0) {
             perft_unit_test();
 
-        } else if (strcmp(tok, print_s) == 0) {
+        } else if (strcmp(tok, "print") == 0) {
             print_board(&Board, flipped);
 
-        } else if (strcmp(tok, board_s) == 0) {
+        } else if (strcmp(tok, "board") == 0) {
             print_detailed(&Board, flipped);
 
-        } else if (strcmp(tok, moves_s) == 0) {
+        } else if (strcmp(tok, "moves") == 0) {
             tok = strtok(NULL, " ");
             int depth = tok == NULL ? 1 : atoi(tok);
             Move_s List[MAX_MOVES];
@@ -325,29 +319,29 @@ void console(void) {
             }
             printf("\ntotal: %llu\n", totalNodes);
 
-        } else if (strcmp(tok, undo_s) == 0) {
+        } else if (strcmp(tok, "undo") == 0) {
             // TODO: Don't allow undos beyond starting fen
             undo_move(&Board);
             inc_age();
             // dec_age();
             print_board(&Board, flipped);
 
-        } else if (strcmp(tok, perft_s) == 0) {
+        } else if (strcmp(tok, "perft") == 0) {
             tok = strtok(NULL, " ");
             assert(tok != NULL);
             int depth = atoi(tok);
             perft(&Board, depth);
 
-        } else if (strcmp(tok, end_s) == 0) {
+        } else if (strcmp(tok, "end") == 0) {
             return;
 
-        } else if (strcmp(tok, eval_s) == 0) {
+        } else if (strcmp(tok, "eval") == 0) {
             tok = strtok(NULL, " ");
             assert(tok != NULL);
             int depth = atoi(tok);
             do_search(&Board, depth);
 
-        } else if (strcmp(tok, play_s) == 0) {
+        } else if (strcmp(tok, "play") == 0) {
             tok = strtok(NULL, " ");
             assert(tok != NULL);
             double duration = atof(tok);
@@ -372,11 +366,11 @@ void console(void) {
             print_board(&Board, flipped);
             inc_age(); // Important to be done after iterative deepening
 
-        } else if (strcmp(tok, flip_s) == 0) {
+        } else if (strcmp(tok, "flip") == 0) {
             flipped = !flipped;
             print_board(&Board, flipped);
 
-        } else if (strcmp(tok, fen_s) == 0) {
+        } else if (strcmp(tok, "fen") == 0) {
             tok = strtok(NULL, "\0");
             assert(tok != NULL);
             init_tt();
@@ -396,7 +390,7 @@ void console(void) {
             Move_s* MoveToMake = NULL; 
             while(cur != end) {
                 // printf("PPT: %d\n", PPT(cur->move));
-                if(SRC(cur->move) == src && DST(cur->move) == dst && PPT(cur->move) == ppt) {
+                 if(SRC(cur->move) == src && DST(cur->move) == dst && PPT(cur->move) == ppt) {
                     MoveToMake = cur;
                     // MoveSToMake->moveVal = move_eval(&Board, MoveSToMake->move);
                     break;

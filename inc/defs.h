@@ -169,7 +169,7 @@ typedef struct {
     U64 byColour[NUM_SIDES];
 
     U64 checkers;
-    U64 checkSquares[NUM_SIDES][NUM_PIECES]; // checkSquares[SIDE][EMPTY or KING] are undefined
+    // U64 checkSquares[NUM_SIDES][NUM_PIECES]; // checkSquares[SIDE][EMPTY or KING] are undefined
     // But apparently it's part of the C standard to initialise undefined struct fields with 0 when using a designated initialiser!!! Awesome news
     U64 kingBlockers[NUM_SIDES];
 

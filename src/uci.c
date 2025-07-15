@@ -6,7 +6,7 @@
 #include "defs.h"
 #include "tt.h"
 #include "board.h"
-#include "tgui.h"
+#include "console.h"
 #include "search.h"
 #include "move.h"
 #include "gen.h"
@@ -19,13 +19,6 @@ static void handle_debug(char* line) {
 }
 
 static void handle_isready() {
-
-    static int isFirstCall = 1;
-    if(isFirstCall) {
-        isFirstCall = 0;
-        init_all();
-    }
-
     printf("readyok\n");
 }
 
@@ -39,12 +32,6 @@ static void handle_register(char* line) {
     return;
 }
 
-static void handle_position(char* line); // TODO: Delete this once handle_ucinewgame is rewritten
-static void handle_ucinewgame(void) {
-    handle_position("position startpos\n");
-    return;
-}
-
 // position fen fenstr
 // position startpos
 // ... moves e2e4 e7e5 b7b8q
@@ -53,15 +40,15 @@ static void handle_position(char* line) {
 	line += 9;
     char *ptrChar = line;
 
-    char start_fen_s[] = START_FEN;
+    // char start_fen_s[] = START_FEN;
 
     if(strncmp(line, "startpos", 8) == 0){
-        Board = board_init(start_fen_s);
+        Board = board_init(START_FEN);
 
     } else {
         ptrChar = strstr(line, "fen");
         if(ptrChar == NULL) {
-            Board = board_init(start_fen_s);
+            Board = board_init(START_FEN);
         } else {
             ptrChar+=4;
             Board = board_init(ptrChar);
@@ -98,13 +85,19 @@ static void handle_position(char* line) {
 
             do_move(&Board, cur);
 
-            while(*ptrChar && *ptrChar!= ' ') ptrChar++;
+            while(*ptrChar && *ptrChar!= ' ' && *ptrChar!= '\n') ptrChar++;
             ptrChar++;
         }
     }
 	// PrintBoard(pos);
 }
 
+static void handle_ucinewgame(void) {
+    handle_position("position startpos\n");
+    return;
+}
+
+// go movetime 10000
 // go depth 6 wtime 180000 btime 100000 binc 1000 winc 1000 movetime 1000 movestogo 40
 static void handle_go(char* line) {
 
@@ -194,7 +187,7 @@ static void handle_go(char* line) {
     else if(ourTime >= 7500 && ((theirTime - 60000)*2/8 + 7500 <= ourTime))
         duration = DANGER;
     else 
-        duration = INSTANT;
+        duration = INSTANT; // TODO: Do not allow this to be zero unless I explicitly test it
 
     // printf("duration: %g\n", duration);
 
@@ -222,6 +215,8 @@ void uci(void) {
     printf("id name %s %s\n", NAME, VERSION);
     printf("id author %s\n", AUTHOR);
     printf("uciok\n");
+    
+    init_all();
 
 	char line[STREAM_BUFF_SIZE];
 
@@ -229,7 +224,7 @@ void uci(void) {
 
         if (!fgets(line, STREAM_BUFF_SIZE, stdin))  continue;
 
-        // printf("%s", line);
+        printf("%s", line);
 
         if      (!strncmp(line, "debug",       5)) handle_debug(line);
         else if (!strncmp(line, "isready",     7)) handle_isready();
@@ -240,6 +235,9 @@ void uci(void) {
         else if (!strncmp(line, "go",          2)) handle_go(line);
         else if (!strncmp(line, "stop",        4)) handle_stop();
         else if (!strncmp(line, "ponderhit",   9)) handle_ponderhit();
-        else if (!strncmp(line, "quit",        4)) handle_quit();
+        else if (!strncmp(line, "quit",        4)) {
+            handle_quit();
+            break;
+        }
     }
 }

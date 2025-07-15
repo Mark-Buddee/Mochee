@@ -6,7 +6,7 @@
 #include "tt.h"
 #include "board.h"
 #include "bitboard.h"
-#include "tgui.h"
+#include "console.h"
 
 TTEntry_s TT[TT_ENTRIES];
 

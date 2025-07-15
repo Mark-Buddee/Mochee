@@ -6,15 +6,16 @@
 #include "move.h"
 #include "eval.h"
 #include "gen.h"
-#include "search.h"
-#include "tgui.h"
+#include "console.h"
 #include "tt.h"
 #include "board.h"
 #include "bitboard.h"
+#include "search.h"
 
 extern unsigned long long tableHits;
 extern unsigned long long tableUpdates;
 extern unsigned long long tableOverwrites;
+extern unsigned long long tableOverwriteDepthSum;
 
 int is_three_fold(Board_s* Board, int rootPly) {
 
@@ -85,7 +86,7 @@ void score_moves(Board_s* Board, Move_s* cur, Move_s* end, Move bestMove) {
 }
 
 void partial_insertion_sort(Move_s* begin, Move_s* end, int limit) { 
-    // Runs slightly slower because of the repeated positionScore  + orderinBias sum
+    // Runs slightly slower because of the repeated positionScore  + orderingBias sum
 
     // Copied from stockfish
     for (Move_s *sortedEnd = begin, *p = begin + 1; p < end; ++p)
@@ -182,37 +183,37 @@ int quiesce(Board_s* const Board, int alpha, int beta, int rootPly) {
     if(raisedAlpha || Board->checkers) return alpha; // Board->hisPly - startPly < MAX_QUIET_CHECK_PLIES
     return alpha;
 
-    // Fix the following so the comment is not true!
-    // We've already checked that staticEval <= alpha
-    // if(staticEval < alpha) return alpha;
-    // if(staticEval < alpha - QUIET_DELTA_VAL) return alpha; // Removing this condition creates segfault - endless checks are searched.
-    // assert(staticEval == alpha);
+    // // Fix the following so the comment is not true!
+    // // We've already checked that staticEval <= alpha
+    // // if(staticEval < alpha) return alpha;
+    // // if(staticEval < alpha - QUIET_DELTA_VAL) return alpha; // Removing this condition creates segfault - endless checks are searched.
+    // // assert(staticEval == alpha);
 
 
-    // If no captures raised alpha, we investigate quiet checks
-    // printf("activate\n");
-    cur = List;
-    end = gen_all(Board, List, Board->side, QUIET_CHECKS);
-    score_moves(Board, List, end, bestMove);
-    partial_insertion_sort(List, end, INSERTION_SORT_MIN);
+    // // If no captures raised alpha, we investigate quiet checks
+    // // printf("activate\n");
+    // cur = List;
+    // end = gen_all(Board, List, Board->side, QUIET_CHECKS);
+    // score_moves(Board, List, end, bestMove);
+    // partial_insertion_sort(List, end, INSERTION_SORT_MIN);
 
-    while(cur != end) {
+    // while(cur != end) {
 
-        if(cur->positionScore <= 0) { // Only allow quiet checks that IMPROVE the position
-            cur++;
-            continue;
-        }
+    //     if(cur->positionScore <= 0) { // Only allow quiet checks that IMPROVE the position
+    //         cur++;
+    //         continue;
+    //     }
 
-        do_move(Board, cur);
-        int score = -quiesce(Board, -beta, -alpha, rootPly);
-        undo_move(Board);
+    //     do_move(Board, cur);
+    //     int score = -quiesce(Board, -beta, -alpha, rootPly);
+    //     undo_move(Board);
 
-        if(score >= beta) return beta;
-        if(score > alpha) alpha = score;
-        cur++;
-    }
+    //     if(score >= beta) return beta;
+    //     if(score > alpha) alpha = score;
+    //     cur++;
+    // }
 
-    return alpha;
+    // return alpha;
 }
 
 int alpha_beta(Board_s* const Board, int alpha, int beta, int depth, int rootPly, clock_t endTime) {

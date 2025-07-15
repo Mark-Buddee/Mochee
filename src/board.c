@@ -8,7 +8,7 @@
 #include "board.h"
 #include "gen.h"
 #include "read.h"
-#include "tgui.h"
+#include "console.h"
 #include "bitboard.h"
 #include "eval.h"
 #include "magic.h"
@@ -35,14 +35,14 @@ void update_checkers(Board_s* const Board) {
     Board->checkers = attackers_to(Board, ksq, obstacles) & Board->byColour[!side];
 }
 
-// Squares for a piece that will deliver check upon landing on
-void update_checkSquares(Board_s* const Board, const int side) {
-    int enemyKsq = lsb(piece(Board, KING, !side));
-    U64 obstacles = Board->byType[ALL];
-    for(int pieceType = PAWN; pieceType <= ROOK; pieceType++)
-        Board->checkSquares[side][pieceType] = attacks(pieceType, enemyKsq, obstacles);
-    Board->checkSquares[side][QUEEN] = Board->checkSquares[side][BISHOP] | Board->checkSquares[side][ROOK];
-}
+// // Squares for a piece that will deliver check upon landing on
+// void update_checkSquares(Board_s* const Board, const int side) {
+//     int enemyKsq = lsb(piece(Board, KING, !side));
+//     U64 obstacles = Board->byType[ALL];
+//     for(int pieceType = PAWN; pieceType <= ROOK; pieceType++)
+//         Board->checkSquares[side][pieceType] = attacks(pieceType, enemyKsq, obstacles);
+//     Board->checkSquares[side][QUEEN] = Board->checkSquares[side][BISHOP] | Board->checkSquares[side][ROOK];
+// }
 
 // Pinned pieces (for both sides)
 void update_kingBlockers(Board_s* const Board, const int side) {
@@ -60,8 +60,8 @@ void update_kingBlockers(Board_s* const Board, const int side) {
 
 void init_check_data(Board_s* const Board) {
     update_checkers(Board);
-    update_checkSquares(Board, WHITE);
-    update_checkSquares(Board, BLACK);
+    // update_checkSquares(Board, WHITE);
+    // update_checkSquares(Board, BLACK);
     update_kingBlockers(Board, WHITE);
     update_kingBlockers(Board, BLACK);
 }
@@ -164,12 +164,16 @@ int isLegal(const Board_s* const Board) {
     return 1;
 }
 
-Board_s board_init(char* fen) {
-    // char dup[] = fen;
+Board_s board_init(const char* fen) {
     Board_s Board;
 
+    // Make a writable copy of the FEN string
+    char fen_copy[128];
+    strncpy(fen_copy, fen, sizeof(fen_copy) - 1);
+    fen_copy[sizeof(fen_copy) - 1] = '\0';
+
     // Parse FEN
-    char *fenPieces         = strtok(fen , " ");
+    char *fenPieces         = strtok(fen_copy , " ");
     char *fenSide           = strtok(NULL, " ");
     char *fenCastlingRights = strtok(NULL, " ");
     char *fenEnPas          = strtok(NULL, " ");
@@ -190,10 +194,10 @@ Board_s board_init(char* fen) {
         Board.byType[i] = 0;
     for(int i = 0; i < NUM_SIDES; i++)
         Board.byColour[i] = 0;
-    for(int i = 0; i < NUM_PIECES; i++) {
-        Board.checkSquares[WHITE][i] = 0;
-        Board.checkSquares[BLACK][i] = 0;
-    }
+    // for(int i = 0; i < NUM_PIECES; i++) {
+    //     Board.checkSquares[WHITE][i] = 0;
+    //     Board.checkSquares[BLACK][i] = 0;
+    // }
     Undo_s tUndo = {NULL_MOVE, EMPTY, NO_CASTLING, 0, 0ULL, .kingBlockers[WHITE] = 0ULL, 0ULL, 0, 0ULL};
     for(int i = 0; i < MAX_GAME_PLYS; i++)
         Board.Undos[i] = tUndo;

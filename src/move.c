@@ -8,7 +8,7 @@
 #include "bitboard.h"
 #include "eval.h"
 #include "tt.h"
-#include "tgui.h"
+#include "console.h"
 
 // // Add the current board state to the Transposition Table, or increment the position frequency if it already exists
 // void inc_posFreq(Board_s* const Board) {
@@ -74,7 +74,9 @@ void do_move(Board_s* const Board, const Move_s* cur) {
         .castlingRights = Board->castlingRights, 
         .hundredPly = Board->hundredPly, 
         .enPas = Board->enPas, 
-        .checkers = Board->checkers,  
+        .checkers = Board->checkers,
+        .kingBlockers[WHITE] = Board->kingBlockers[WHITE],
+        .kingBlockers[BLACK] = Board->kingBlockers[BLACK],
         .staticEval = Board->staticEval, 
         .key = Board->key
     };
