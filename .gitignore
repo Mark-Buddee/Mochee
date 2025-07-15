@@ -1,5 +1,11 @@
+# Executables
 *.exe
 
+# VScode settings
+.vscode/c_cpp_properties.json
+.vscode/settings.json
+
+# Not to be shared
 notes/
 unused/
 vice/
