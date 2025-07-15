@@ -3,8 +3,8 @@
 #include <time.h>
 #include <string.h>
 #include <stddef.h>
-#include "defs.h"
 #include "console.h"
+#include "defs.h"
 #include "init.h"
 #include "board.h"
 #include "gen.h"
@@ -29,10 +29,11 @@ Board_s Board;
 // 
 // }
 
+static void print_version(void) {
+    printf("\n%s %s %s\n\n", NAME, VERSION, NAME_DESC);
+}
+
 int main(void) {
-	
-	// printf("%lld\n", 5486823173478921566 % 181117672);
-	// printf("%lld\n", 12554450795584811879 % 181117672);
 
 	setbuf(stdout, NULL);
 

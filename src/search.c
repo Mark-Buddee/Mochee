@@ -11,6 +11,7 @@
 #include "board.h"
 #include "bitboard.h"
 #include "search.h"
+#include "debug.h"
 
 extern unsigned long long tableHits;
 extern unsigned long long tableUpdates;

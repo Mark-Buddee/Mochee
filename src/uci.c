@@ -12,6 +12,7 @@
 #include "gen.h"
 #include "magic.h"
 #include "init.h"
+#include "debug.h"
 
 static void handle_debug(char* line) {
     (void)line;

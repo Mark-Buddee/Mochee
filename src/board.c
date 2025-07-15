@@ -79,8 +79,8 @@ void update_check_data(Board_s* const Board, const Move move, const int mvd) {
 
     U64 srcDst64 = BIT(src) | BIT(dst);
     U64 ksqBit      = piece(Board, KING, side);
-    U64 enemyKsqBit = piece(Board, KING, !side);
-    assert(enemyKsqBit);
+    // U64 enemyKsqBit = piece(Board, KING, !side);
+    // assert(enemyKsqBit);
 
     if(!ksqBit) { // they've just captures our king
         Board->checkers = BIT(dst);
