@@ -38,7 +38,6 @@ static void handle_register(char* line) {
 // ... moves e2e4 e7e5 b7b8q
 static void handle_position(char* line) {
 
-	line += 9;
     char *ptrChar = line;
 
     // char start_fen_s[] = START_FEN;
@@ -227,13 +226,13 @@ void uci(void) {
 
         printf("%s", line);
 
-        if      (!strncmp(line, "debug",       5)) handle_debug(line);
+        if      (!strncmp(line, "debug",       5)) handle_debug(line + 6);
         else if (!strncmp(line, "isready",     7)) handle_isready();
-        else if (!strncmp(line, "setoption",   9)) handle_setoption(line);
+        else if (!strncmp(line, "setoption",   9)) handle_setoption(line + 10);
         else if (!strncmp(line, "register",    8)) handle_register(line);
         else if (!strncmp(line, "ucinewgame", 10)) handle_ucinewgame();
-        else if (!strncmp(line, "position",    8)) handle_position(line);
-        else if (!strncmp(line, "go",          2)) handle_go(line);
+        else if (!strncmp(line, "position",    8)) handle_position(line + 9);
+        else if (!strncmp(line, "go",          2)) handle_go(line + 3);
         else if (!strncmp(line, "stop",        4)) handle_stop();
         else if (!strncmp(line, "ponderhit",   9)) handle_ponderhit();
         else if (!strncmp(line, "quit",        4)) {
