@@ -10,6 +10,11 @@
 				"-g",
 				"-O3",
 				"-DNDEBUG",
+				"-march=native", 		// Optimize for my CPU architecture
+				"-flto", 				// Link Time Optimization
+				// "-ffast-math", 			// Fast math optimizations. Not safe
+				// "-fprofile-generate", 	// Enable profiling
+				"-fprofile-use", 		// Use profiling data
 				"-Iinc",
 				"-Ideps/tinycthread",
 			    "src/*.c",
