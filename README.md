@@ -22,4 +22,4 @@ Those who do not know what is coming for them:
 
 ## Future
 Mochee should reach 2500 rapid rating on Lichess, with entirely self-trained values. That would confidently place Mochee
-in the top 99.9% of human players on the site.
+in the top 0.01% of human players on the site.
