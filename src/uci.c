@@ -101,28 +101,29 @@ static void handle_ucinewgame(void) {
 // go depth 6 wtime 180000 btime 100000 binc 1000 winc 1000 movetime 1000 movestogo 40
 static void handle_go(char* line) {
 
-	// int depth = -1, movestogo = 30,movetime = -1;
+	// int depth = -1, movestogo = 30;
 	// int wtime = -1, btime = -1, winc = 0, binc = 0;
+    int movetime = -1;
     char *ptr = NULL;
     int ourTime = 0;
     int theirTime = 0;
-    int ourInc = 0;
-    int theirInc = 0;
+    // int ourInc = 0;
+    // int theirInc = 0;
 	// info->timeset = FALSE;
 
 	// if ((ptr = strstr(line,"infinite"))) {
 	// 	;
 	// }
 
-	if ((ptr = strstr(line,"winc"))) {
-		if(Board.side == WHITE) ourInc = atoi(ptr + 5);
-        else theirInc = atoi(ptr + 5);
-	}
+	// if ((ptr = strstr(line,"winc"))) {
+	// 	if(Board.side == WHITE) ourInc = atoi(ptr + 5);
+    //     else theirInc = atoi(ptr + 5);
+	// }
 
-	if ((ptr = strstr(line,"binc"))) {
-		if(Board.side == WHITE) theirInc = atoi(ptr + 5);
-        else ourInc = atoi(ptr + 5);
-	}
+	// if ((ptr = strstr(line,"binc"))) {
+	// 	if(Board.side == WHITE) theirInc = atoi(ptr + 5);
+    //     else ourInc = atoi(ptr + 5);
+	// }
 
 	if ((ptr = strstr(line,"wtime"))) {
 		if(Board.side == WHITE) ourTime = atoi(ptr + 6);
@@ -133,16 +134,14 @@ static void handle_go(char* line) {
 		if(Board.side == WHITE) theirTime = atoi(ptr + 6);
         else ourTime = atoi(ptr + 6);
 	}
-    // printf("us: %d, them: %d\n", ourTime, theirTime);
-    // printf("ourInc: %d, theirInc: %d\n", ourInc, theirInc);
 
 	// if ((ptr = strstr(line,"movestogo"))) {
 	// 	movestogo = atoi(ptr + 10);
 	// }
 
-	// if ((ptr = strstr(line,"movetime"))) {
-	// 	movetime = atoi(ptr + 9);
-	// }
+	if ((ptr = strstr(line,"movetime"))) {
+		movetime = atoi(ptr + 9);
+	}
 
 	// if ((ptr = strstr(line,"depth"))) {
 	// 	depth = atoi(ptr + 6);
@@ -189,6 +188,8 @@ static void handle_go(char* line) {
     else 
         duration = INSTANT; // TODO: Do not allow this to be zero unless I explicitly test it
 
+    if(movetime != -1) duration = movetime;
+
     // printf("duration: %g\n", duration);
 
 	Move bestMove = iterative_deepening(&Board, duration);
@@ -215,7 +216,7 @@ void uci(void) {
     printf("id name %s %s\n", NAME, VERSION);
     printf("id author %s\n", AUTHOR);
     printf("uciok\n");
-    
+
     init_all();
 
 	char line[STREAM_BUFF_SIZE];
@@ -224,7 +225,7 @@ void uci(void) {
 
         if (!fgets(line, STREAM_BUFF_SIZE, stdin))  continue;
 
-        printf("%s", line);
+        // printf("%s", line);
 
         if      (!strncmp(line, "debug",       5)) handle_debug(line + 6);
         else if (!strncmp(line, "isready",     7)) handle_isready();
