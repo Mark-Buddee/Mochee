@@ -35,6 +35,8 @@ static void print_version(void) {
 
 int main(void) {
 
+	printf("TTEntries: %llu\n", TT_ENTRIES);
+
 	setbuf(stdout, NULL);
 
     print_version();

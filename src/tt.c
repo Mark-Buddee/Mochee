@@ -21,7 +21,7 @@ extern unsigned long long tableOverwrites;
 
 // int is_hit(U64 key) {
 //     TTEntry_s CurrentEntry = TT[key % TT_ENTRIES];
-//     if(CurrentEntry.key == (key >> 32)) return 1;
+//     if(CurrentEntry.key == (key >> 48)) return 1;
 //     return 0;
 // }
 
@@ -29,7 +29,7 @@ extern unsigned long long tableOverwrites;
 //     TTEntry_s CurrentEntry = TT[key % TT_ENTRIES];
 
 //     if(IS_PV_NODE(CurrentEntry.scoreBound) && CurrentEntry.age == 0) return;
-//     if((CurrentEntry.key == key >> 32) && (CurrentEntry.depth >= NewEntry.depth)) return;
+//     if((CurrentEntry.key == key >> 48) && (CurrentEntry.depth >= NewEntry.depth)) return;
 
 //     TT[key % TT_ENTRIES] = NewEntry;
 // }
@@ -38,7 +38,7 @@ void add_entry(U64 key, Move bestMove, uint16_t scoreBound, uint8_t depth) {
 
     TTEntry_s* CurrentEntry = &TT[key % TT_ENTRIES];
 
-    if(CurrentEntry->key != key >> 32) {
+    if(CurrentEntry->key != key >> 48) {
         if(CurrentEntry->age == 0 && CurrentEntry->depth > depth) return; // Prioritise greater depth
     }
 
@@ -51,7 +51,7 @@ void add_entry(U64 key, Move bestMove, uint16_t scoreBound, uint8_t depth) {
     //     assert(!IS_PV_NODE(CurrentEntry->scoreBound));
     // }
 
-    TTEntry_s NewEntry = {key >> 32, bestMove, scoreBound, depth, 0};
+    TTEntry_s NewEntry = {key >> 48, bestMove, scoreBound, depth, 0};
     
     // if(NewEntry.key == CurrentEntry.key) tableUpdates++;
     // else if(CurrentEntry.key) tableOverwrites++;
@@ -61,7 +61,7 @@ void add_entry(U64 key, Move bestMove, uint16_t scoreBound, uint8_t depth) {
 // int is_table_hit(U64 key, int depth) {
 //     TTEntry_s CurrentEntry = TT[key % TT_ENTRIES];
 //     if(CurrentEntry.key == 0) return 0;
-//     if(CurrentEntry.key != (key >> 32)) {
+//     if(CurrentEntry.key != (key >> 48)) {
 //         tableOverwrites++;
 //         return 0;
 //     }

@@ -20,7 +20,7 @@
 #define SCOREBOUND(score, nodeType) (4*(score) + (nodeType))
 
 typedef struct {
-    uint32_t key;
+    uint16_t key;
     Move move;
     int16_t scoreBound;
     // uint8_t posFreq : 2; // TODO: Bit packing 
