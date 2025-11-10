@@ -142,7 +142,7 @@ int quiesce(Board_s* const Board, int alpha, int beta, int rootPly) {
         if(cur == end) return alpha; // checkmate
 
     } else {
-        if(staticEval >= beta) return beta;
+        if(staticEval >= beta) return beta; // Futility pruning
         if(staticEval > alpha) {
             alpha = staticEval;
             raisedAlpha = 1;
@@ -182,6 +182,9 @@ int quiesce(Board_s* const Board, int alpha, int beta, int rootPly) {
 
     // If alpha has been raised, or if all moves have been searched, there is no need to keep searching
     if(raisedAlpha || Board->checkers) return alpha; // Board->hisPly - startPly < MAX_QUIET_CHECK_PLIES
+
+    // No capture suggests raising alpha, no checks, this is a truly quiet position
+    // if(Board->hisPly > 16) print_detailed(Board, Board->side);
     return alpha;
 
     // // Fix the following so the comment is not true!
