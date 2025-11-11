@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 #define NAME                            "Mochee"
-#define VERSION                         "v1.1"
+#define VERSION                         "v1.3"
 #define NAME_DESC                       "Mother of Chess Engines\nCopyright (C) Chonker Bonker Corporation. All rights reserved."
 #define AUTHOR                          "Buddee890"
 
