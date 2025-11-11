@@ -23,7 +23,6 @@ typedef struct {
     uint16_t key;
     Move move;
     int16_t scoreBound;
-    // uint8_t posFreq : 2; // TODO: Bit packing 
     uint8_t depth;
     uint8_t age;
 } TTEntry_s;
