@@ -78,7 +78,7 @@ void update_check_data(Board_s* const Board, const Move move, const int mvd) {
     int ppt = PPT(move);
 
     U64 srcDst64 = BIT(src) | BIT(dst);
-    U64 ksqBit      = piece(Board, KING, side);
+    U64 ksqBit   = piece(Board, KING, side);
     // U64 enemyKsqBit = piece(Board, KING, !side);
     // assert(enemyKsqBit);
 
@@ -91,10 +91,11 @@ void update_check_data(Board_s* const Board, const Move move, const int mvd) {
 
     int ksq      = lsb(piece(Board, KING, side));
     int enemyKsq = lsb(piece(Board, KING, !side));
-
     int promotedPiece = (spc == PROMOTION ? ppt + KNIGHT : mvd);
     int castle = src < dst ? side == WHITE ? BLACK_OO  : WHITE_OO
                            : side == WHITE ? BLACK_OOO : WHITE_OOO;
+
+    // Update checkers
     if( (BIT(src) & Board->kingBlockers[side])          ||
         (BIT(dst) & pseudo_attacks[promotedPiece][ksq]) ||
         (spc == EN_PASSANT)                             ||
@@ -111,6 +112,7 @@ void update_check_data(Board_s* const Board, const Move move, const int mvd) {
     // else if(srcDst64 & Board->checkSquares[!side][QUEEN])
     //     update_checkSquares(Board, !side);
     
+    // Update kingBlockers
     if((mvd == KING) || (spc == EN_PASSANT)) {
         update_kingBlockers(Board, WHITE); // TODO: surely I don't need two conditions
         update_kingBlockers(Board, BLACK);

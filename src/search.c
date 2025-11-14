@@ -229,7 +229,7 @@ int alpha_beta(Board_s* const Board, int alpha, int beta, int depth, int rootPly
     if(is_three_fold(Board, rootPly)) return 0;
     
     Move bestMove = NULL_MOVE;
-    TTEntry_s Entry = TT[Board->key % TT_ENTRIES];
+    TTEntry_s Entry = TT[Board->key % TTEntries];
 
     if(Entry.key == Board->key >> 48) {
 
@@ -312,9 +312,9 @@ void do_search(Board_s* const Board, int depth) {
         end = clock();
         double dt = (double)(end-start) / CLOCKS_PER_SEC;
 
-        assert(TT[Board->key % TT_ENTRIES].key == Board->key >> 48);
-        assert(TT[Board->key % TT_ENTRIES].move != NULL_MOVE);
-        int score = SCORE(TT[Board->key % TT_ENTRIES].scoreBound);
+        assert(TT[Board->key % TTEntries].key == Board->key >> 48);
+        assert(TT[Board->key % TTEntries].move != NULL_MOVE);
+        int score = SCORE(TT[Board->key % TTEntries].scoreBound);
         int trueEval = Board->side == WHITE ? score : -score;
 
         printf("   %2d ply  %4d  %7g  ", i, trueEval, dt);
@@ -340,7 +340,7 @@ Move iterative_deepening(Board_s* const Board, double duration) {
         if(clock() > endTime) break;
     }
 
-    assert(TT[Board->key % TT_ENTRIES].key == Board->key >> 48);
-    assert(TT[Board->key % TT_ENTRIES].move != NULL_MOVE);
-    return TT[Board->key % TT_ENTRIES].move;
+    assert(TT[Board->key % TTEntries].key == Board->key >> 48);
+    assert(TT[Board->key % TTEntries].move != NULL_MOVE);
+    return TT[Board->key % TTEntries].move;
 }

@@ -139,7 +139,7 @@ void print_pgn(const Board_s* const Board) {
 
 void print_variation(Board_s* const Board, int maxDepth) {
 
-    TTEntry_s Entry = TT[Board->key % TT_ENTRIES];
+    TTEntry_s Entry = TT[Board->key % TTEntries];
     if(Entry.key != Board->key >> 48) return;
     if(!IS_PV_NODE(Entry.scoreBound)) return;
     Move bestMove = Entry.move;

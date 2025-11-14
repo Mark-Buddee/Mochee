@@ -8,7 +8,8 @@
 #include "bitboard.h"
 #include "console.h"
 
-TTEntry_s TT[TT_ENTRIES];
+TTEntry_s* TT;
+unsigned long long TTEntries;
 
 U64 zobrist_square[NUM_SIDES][NUM_PIECES][NUM_SQUARES];
 U64 zobrist_blackToPlay;
@@ -36,10 +37,11 @@ extern unsigned long long tableOverwrites;
 
 void add_entry(U64 key, Move bestMove, uint16_t scoreBound, uint8_t depth) {
 
-    TTEntry_s* CurrentEntry = &TT[key % TT_ENTRIES];
+    TTEntry_s* CurrentEntry = &TT[key % TTEntries];
 
+    // On type 2 collisions, prioritise age
     if(CurrentEntry->key != key >> 48) {
-        if(CurrentEntry->age == 0 && CurrentEntry->depth > depth) return; // Prioritise greater depth
+        if(CurrentEntry->age == 0 && CurrentEntry->depth > depth) return; // Prioritise age, then greater depth
     }
 
     if(CurrentEntry->depth > depth) { // Prioritise greater depth
@@ -51,11 +53,12 @@ void add_entry(U64 key, Move bestMove, uint16_t scoreBound, uint8_t depth) {
     //     assert(!IS_PV_NODE(CurrentEntry->scoreBound));
     // }
 
+    // Overwrite the transposition table
     TTEntry_s NewEntry = {key >> 48, bestMove, scoreBound, depth, 0};
+    *CurrentEntry = NewEntry;
     
     // if(NewEntry.key == CurrentEntry.key) tableUpdates++;
     // else if(CurrentEntry.key) tableOverwrites++;
-    *CurrentEntry = NewEntry;
 }
 
 // int is_table_hit(U64 key, int depth) {
@@ -76,18 +79,18 @@ void add_entry(U64 key, Move bestMove, uint16_t scoreBound, uint8_t depth) {
 void init_tt(void) {
     // TTEntry_s BlankEntry = {0, 0, NULL_MOVE, BLANK_NODE, 0, 0};
     TTEntry_s BlankEntry = {0, NULL_MOVE, BLANK_NODE, 0, 0};
-    for(long long unsigned i = 0; i < TT_ENTRIES; i++)
+    for(long long unsigned i = 0; i < TTEntries; i++)
         TT[i] = BlankEntry;
 }
 
 void inc_age(void) {
     printf("Incrementing age\n");
-    for(long long unsigned i = 0; i < TT_ENTRIES; i++)
+    for(long long unsigned i = 0; i < TTEntries; i++)
         if(TT[i].key) TT[i].age++;
 }
 
 void dec_age(void) {
-    for(long long unsigned i = 0; i < TT_ENTRIES; i++)
+    for(long long unsigned i = 0; i < TTEntries; i++)
         if(TT[i].key && TT[i].age > 0) TT[i].age--;
 }
 

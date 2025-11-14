@@ -9,8 +9,8 @@
 
 // #define TT_SIZE_MB 1900 // should be power of 2
 // #define TT_SIZE_MB 512 // 1900
-#define TT_SIZE_MB 512
-#define TT_ENTRIES (unsigned long long)((unsigned long long)(TT_SIZE_MB)*1024*1024/sizeof(TTEntry_s))
+// #define TT_SIZE_MB 512
+// #define TT_ENTRIES (unsigned long long)((unsigned long long)(TT_SIZE_MB)*1024*1024/sizeof(TTEntry_s))
 
 #define IS_PV_NODE(scoreBound)      (((scoreBound) & NODE_TYPE) == PV_NODE)
 #define IS_ALL_NODE(scoreBound)     (((scoreBound) & NODE_TYPE) == ALL_NODE)
@@ -27,7 +27,8 @@ typedef struct {
     uint8_t age;
 } TTEntry_s;
 
-extern TTEntry_s TT[TT_ENTRIES];
+extern TTEntry_s* TT;
+extern unsigned long long TTEntries;
 extern U64 zobrist_square[NUM_SIDES][NUM_PIECES][NUM_SQUARES];
 extern U64 zobrist_blackToPlay;
 extern U64 zobrist_castle[NUM_CASTLING];

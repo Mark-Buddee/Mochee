@@ -17,9 +17,9 @@
 #include "uci.h"
 #include "tinycthread.h"
 
-unsigned long long tableHits;
-unsigned long long tableUpdates;
-unsigned long long tableOverwrites;
+// unsigned long long tableHits;
+// unsigned long long tableUpdates;
+// unsigned long long tableOverwrites;
 
 Board_s Board;
 
@@ -35,7 +35,25 @@ static void print_version(void) {
 
 int main(void) {
 
-	printf("TTEntries: %llu\n", TT_ENTRIES);
+	// unsigned long long TT_SIZE_MB = 512ULL;
+	unsigned long long TT_SIZE_MB = 64ULL;
+	unsigned long long bytes = TT_SIZE_MB * 1024ULL * 1024ULL;
+
+	TTEntries = bytes / sizeof(TTEntry_s);
+	TT = malloc(TTEntries * sizeof(TTEntry_s));
+
+	
+    if (!TT) {
+        fprintf(stderr, "Failed to allocate transposition table!\n");
+        return 1;
+    }
+
+	// printf("TTEntries: %llu\n", TT_ENTRIES);
+	printf("TT intended entries: %llu\n", TTEntries);
+	printf("TT actual bytes:     %zu\n", TTEntries * sizeof(TTEntry_s));
+	printf("TT actual size (MB): %llu\n",
+       (unsigned long long)(TTEntries * sizeof(TTEntry_s)) / (1024ULL * 1024ULL));
+	printf("Size of each entry:  %zu\n", sizeof(TTEntry_s));
 
 	setbuf(stdout, NULL);
 
