@@ -7,6 +7,7 @@
 #include "board.h"
 #include "bitboard.h"
 #include "console.h"
+#include "debug.h"
 
 TTEntry_s* TT;
 unsigned long long TTEntries;
@@ -39,26 +40,26 @@ void add_entry(U64 key, Move bestMove, uint16_t scoreBound, uint8_t depth) {
 
     TTEntry_s* CurrentEntry = &TT[key % TTEntries];
 
-    // On type 2 collisions, prioritise age
-    if(CurrentEntry->key != key >> 48) {
-        if(CurrentEntry->age == 0 && CurrentEntry->depth > depth) return; // Prioritise age, then greater depth
-    }
+    int keyMatch = CurrentEntry->key == (key >> 48);
 
-    if(CurrentEntry->depth > depth) { // Prioritise greater depth
-        CurrentEntry->age = 0;
-        return;
-    }
+    // All untouched keymatches should not be aged
+    assert(!(keyMatch && depth < CurrentEntry->depth && CurrentEntry->age != 0));
 
-    // if(CurrentEntry->depth == depth) {
-    //     assert(!IS_PV_NODE(CurrentEntry->scoreBound));
-    // }
+    // Prioritise greater depth on key matches and non-aged entries
+    if(depth < CurrentEntry->depth && (keyMatch || CurrentEntry->age == 0)) return;
+
+    #ifndef NDEBUG
+    // Don't downgrade a PV entry to non-PV
+    if(keyMatch && CurrentEntry->depth == depth) assert(!IS_PV_NODE(CurrentEntry->scoreBound) || IS_PV_NODE(scoreBound));
+    
+    if (keyMatch) TTStats.updates++;
+    else if (CurrentEntry->key) TTStats.overwrites++;
+    #endif
 
     // Overwrite the transposition table
     TTEntry_s NewEntry = {key >> 48, bestMove, scoreBound, depth, 0};
     *CurrentEntry = NewEntry;
     
-    // if(NewEntry.key == CurrentEntry.key) tableUpdates++;
-    // else if(CurrentEntry.key) tableOverwrites++;
 }
 
 // int is_table_hit(U64 key, int depth) {
