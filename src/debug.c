@@ -8,6 +8,10 @@
 #include "move.h"
 #include "eval.h"
 
+#ifndef NDEBUG
+struct TTStats_s TTStats = {0};
+#endif
+
 void print_bitBoard(U64 bitBoard) {
     for(int rank = RANK_8; rank >= RANK_1; rank--) {
         for(int file = FILE_A; file <= FILE_H; file++) {

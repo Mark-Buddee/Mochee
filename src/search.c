@@ -234,7 +234,9 @@ int alpha_beta(Board_s* const Board, int alpha, int beta, int depth, int rootPly
     if(Entry.key == Board->key >> 48) {
 
         if(Entry.depth >= depth) {
-            // tableHits++;
+            #ifndef NDEBUG
+            TTStats.hits++;
+            #endif
             if(IS_PV_NODE(Entry.scoreBound)) return SCORE(Entry.scoreBound); // exact score
             if(IS_CUT_NODE(Entry.scoreBound) && SCORE(Entry.scoreBound) >= beta) return beta; // lower bound exceeds beta
             if(IS_ALL_NODE(Entry.scoreBound) && SCORE(Entry.scoreBound) <= alpha) return alpha; // upper bound is below alpha

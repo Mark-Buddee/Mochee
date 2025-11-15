@@ -1,6 +1,16 @@
 #ifndef DEBUG_H
 #define DEBUG_H
 
+#ifndef NDEBUG
+struct TTStats_s {
+    unsigned long long hits;
+    unsigned long long updates;
+    unsigned long long overwrites;
+};
+
+extern struct TTStats_s TTStats;
+#endif
+
 void print_bitBoard(U64 bitBoard);
 void print_detailed(const Board_s* const Board, int flipped);
 void print_pgn(const Board_s* const Board);
