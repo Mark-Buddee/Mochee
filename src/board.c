@@ -212,7 +212,7 @@ Board_s board_init(const char* fen) {
         while(file <= FILE_H) {
             char fenChar = tok[i];
             if(isdigit(fenChar)) {
-                file += atoi(&fenChar);
+                file += fenChar - '0';
             } else {
                 int pieceType = fen_piece(fenChar);
                 int side = fen_colour(fenChar);
