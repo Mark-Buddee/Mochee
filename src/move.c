@@ -26,7 +26,7 @@
 //     if(TT[Board->key % TT_ENTRIES].posFreq != 0) return;
 
 //     // Position does not exist in transposition table
-//     TTEntry_s NewEntry = {.key = Board->key >> 48, .move = NULL_MOVE, .scoreBound = BLANK_NODE, .posFreq = 1, .depth = 0, .age = 0};
+//     TTEntry_s NewEntry = {.key = Board->key >> 48, .move = NULL_MOVE, .scoreBound = BLANK_NODE, .posFreq = 1, .depth = 0, .rootPly = 0}; // TODO rootPly is not 0
 //     TT[Board->key % TT_ENTRIES] = NewEntry;
 
 //     return;
@@ -38,7 +38,7 @@
 //     // Position may not exist in Transposition Table
 //     if(TT[Board->key % TT_ENTRIES].key != Board->key >> 48) {
 //         return;
-//         // TTEntry_s NewEntry = {.key = Board->key >> 48, .move = NULL_MOVE, .scoreBound = BLANK_NODE, .posFreq = 1, .depth = 0, .age = 0};
+//         // TTEntry_s NewEntry = {.key = Board->key >> 48, .move = NULL_MOVE, .scoreBound = BLANK_NODE, .posFreq = 1, .depth = 0, .rootPly = 0}; // TODO rootPly is not 0
 //         // TT[Board->key % TT_ENTRIES] = NewEntry;
 //     }
 

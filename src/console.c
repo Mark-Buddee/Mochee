@@ -87,7 +87,7 @@ static void handle_board(int flipped) {
 static void handle_undo(int flipped) {
     // TODO: Don't allow undos beyond starting fen
     undo_move(&Board);
-    inc_age();
+    // inc_age();
     // dec_age();
     print_board(&Board, flipped);
 }
@@ -160,7 +160,7 @@ static void handle_play(char* line, int flipped){
     print_move(bestMove);
     printf(" time:%7g\n", dt);
     print_board(&Board, flipped);
-    inc_age(); // Important to be done after iterative deepening
+    // inc_age(); // Important to be done after iterative deepening
 
 }
 
@@ -193,7 +193,7 @@ static void handle_move(char* line, int flipped) {
 
     if(MoveToMake != NULL) {
         do_move(&Board, MoveToMake);
-        inc_age();
+        // inc_age();
         print_board(&Board, flipped);
     } else
         printf("Move not found\n");

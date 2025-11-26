@@ -24,7 +24,7 @@ typedef struct {
     Move move;
     int16_t scoreBound;
     uint8_t depth;
-    uint8_t age;
+    uint8_t rootPly;
 } TTEntry_s;
 
 extern TTEntry_s* TT;
@@ -35,10 +35,9 @@ extern U64 zobrist_castle[NUM_CASTLING];
 extern U64 zobrist_enpSq[NUM_SQUARES];
 
 // int is_hit(U64 key);
-void add_entry(U64 key, Move bestMove, uint16_t scoreBound, uint8_t depth);
+void add_entry(U64 key, Move bestMove, uint16_t scoreBound, uint8_t depth, int rootPly);
 void init_tt(void);
-void inc_age(void);
-void dec_age(void);
+
 void init_zobrist(void);
 
 void init_zobrist_key(Board_s* const Board);

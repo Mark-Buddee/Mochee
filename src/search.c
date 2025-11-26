@@ -260,7 +260,7 @@ int alpha_beta(Board_s* const Board, int alpha, int beta, int depth, int rootPly
             add_entry(Board->key, NULL_MOVE, SCOREBOUND(-INF, PV_NODE), MAX_DEPTH);
             return alpha; // checkmate
         }
-        add_entry(Board->key, NULL_MOVE, SCOREBOUND(0, PV_NODE), MAX_DEPTH);
+        add_entry(Board->key, NULL_MOVE, SCOREBOUND(0, PV_NODE), 0, rootPly); // This is probably a waste of time
         return 0; // stalemate
     }
 
@@ -292,12 +292,12 @@ int alpha_beta(Board_s* const Board, int alpha, int beta, int depth, int rootPly
 
         if(clock() > endTime) {
             // This breaks all instantiations of alpha_beta, only saving nodes that raised alpha
-            if(nodeType == PV_NODE) add_entry(Board->key, bestMove, SCOREBOUND(alpha, ALL_NODE), depth); // Important to save best PV child of root node
+            if(nodeType == PV_NODE) add_entry(Board->key, bestMove, SCOREBOUND(alpha, CUT_NODE), depth, rootPly); // save lower bounds where possible
             return beta;
         }
     }
 
-    add_entry(Board->key, bestMove, SCOREBOUND(alpha, nodeType), depth);
+    add_entry(Board->key, bestMove, SCOREBOUND(alpha, nodeType), depth, rootPly);
     return alpha;
 }
 

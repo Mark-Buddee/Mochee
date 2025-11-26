@@ -30,34 +30,76 @@ extern unsigned long long tableOverwrites;
 // int add_entry(U64 key, TTEntry_s NewEntry) {
 //     TTEntry_s CurrentEntry = TT[key % TT_ENTRIES];
 
-//     if(IS_PV_NODE(CurrentEntry.scoreBound) && CurrentEntry.age == 0) return;
+//     if(IS_PV_NODE(CurrentEntry.scoreBound) && CurrentEntry.rootPly == 0) return; // TODO rootply should not be 0
 //     if((CurrentEntry.key == key >> 48) && (CurrentEntry.depth >= NewEntry.depth)) return;
 
 //     TT[key % TT_ENTRIES] = NewEntry;
 // }
 
-void add_entry(U64 key, Move bestMove, uint16_t scoreBound, uint8_t depth) {
+void add_entry(U64 key, Move bestMove, uint16_t scoreBound, uint8_t depth, int rootPly) {
 
     TTEntry_s* CurrentEntry = &TT[key % TTEntries];
 
     int keyMatch = CurrentEntry->key == (key >> 48);
+    int deeper = depth > CurrentEntry->depth;
+    int8_t ageDifference = (int8_t)((uint8_t)rootPly - CurrentEntry->rootPly);
 
-    // All untouched keymatches should not be aged
-    assert(!(keyMatch && depth < CurrentEntry->depth && CurrentEntry->age != 0));
+    // if(CurrentEntry->rootPly == 200) {
+    //     printf("yay\n");
+    // }
+
+    // static int greatestAgeDiff = 0;
+    // if(ageDifference > greatestAgeDiff) {
+    //     greatestAgeDiff = ageDifference;
+    //     printf("Greatest age difference: %d\n", greatestAgeDiff);
+    //     printf("rootPly: %d, unsigned rootPly: %u, CurrentEntry->rootPly: %u\n", rootPly, (uint8_t)rootPly, CurrentEntry->rootPly);
+    // }
+    // if(ageDifference) printf("Age difference: %d\n", ageDifference);
 
     // Prioritise greater depth on key matches and non-aged entries
-    if(depth < CurrentEntry->depth && (keyMatch || CurrentEntry->age == 0)) return;
+    if(!deeper) {
+
+        // Oldest entries (age difference > 3) can always be overwritten, regardless of depth
+        // or if its in the future age difference <0
+
+        // if(CurrentEntry->rootPly != 0) return;
+        if(!ageDifference) return;
+
+        if(keyMatch && (depth != CurrentEntry->depth || (IS_PV_NODE(CurrentEntry->scoreBound) || !IS_PV_NODE(scoreBound)))) {
+            assert(depth != CurrentEntry->depth || IS_PV_NODE(CurrentEntry->scoreBound) || !IS_PV_NODE(scoreBound)); // Don't miss the chance to upgrade to a PV node
+            CurrentEntry->rootPly = (uint8_t)rootPly; // untouched keymatches can update their age to 0
+            return;
+
+        }
+
+    }
 
     #ifndef NDEBUG
+
     // Don't downgrade a PV entry to non-PV
     if(keyMatch && CurrentEntry->depth == depth) assert(!IS_PV_NODE(CurrentEntry->scoreBound) || IS_PV_NODE(scoreBound));
     
     if (keyMatch) TTStats.updates++;
     else if (CurrentEntry->key) TTStats.overwrites++;
+
     #endif
 
-    // Overwrite the transposition table
-    TTEntry_s NewEntry = {key >> 48, bestMove, scoreBound, depth, 0};
+    // printf("Replacing depth %u (rootPly %u) entry with depth %u (rootPly %u) entry. Key match: %d, Age difference: %d, deeper: %d",
+    //     (unsigned)CurrentEntry->depth, (unsigned)CurrentEntry->rootPly,
+    //     (unsigned)depth, (unsigned)rootPly,
+    //     keyMatch, (int)ageDifference, (int)deeper);
+    // if(IS_PV_NODE(CurrentEntry->scoreBound)) printf(" [OLD PV NODE]");
+    // else if(IS_CUT_NODE(CurrentEntry->scoreBound)) printf(" [OLD CUT NODE]");
+    // else if(IS_ALL_NODE(CurrentEntry->scoreBound)) printf(" [OLD ALL NODE]");
+    // if(IS_PV_NODE(scoreBound)) printf(" [PV NODE]");
+    // else if(IS_CUT_NODE(scoreBound)) printf(" [CUT NODE]");
+    // else if(IS_ALL_NODE(scoreBound)) printf(" [ALL NODE]");
+    // printf(" key: 0x%04x", (unsigned)(key >> 48));
+    // printf("\n");
+
+    // Write to / overwrite the transposition table
+    TTEntry_s NewEntry = {key >> 48, bestMove, scoreBound, depth, (uint8_t)rootPly};
+    // TTEntry_s NewEntry = {key >> 48, bestMove, scoreBound, depth, 0};
     *CurrentEntry = NewEntry;
     
 }
@@ -78,21 +120,9 @@ void add_entry(U64 key, Move bestMove, uint16_t scoreBound, uint8_t depth) {
 // }
 
 void init_tt(void) {
-    // TTEntry_s BlankEntry = {0, 0, NULL_MOVE, BLANK_NODE, 0, 0};
     TTEntry_s BlankEntry = {0, NULL_MOVE, BLANK_NODE, 0, 0};
     for(long long unsigned i = 0; i < TTEntries; i++)
         TT[i] = BlankEntry;
-}
-
-void inc_age(void) {
-    printf("Incrementing age\n");
-    for(long long unsigned i = 0; i < TTEntries; i++)
-        if(TT[i].key) TT[i].age++;
-}
-
-void dec_age(void) {
-    for(long long unsigned i = 0; i < TTEntries; i++)
-        if(TT[i].key && TT[i].age > 0) TT[i].age--;
 }
 
 void init_zobrist(void) {
@@ -133,4 +163,26 @@ void init_zobrist_key(Board_s* const Board) {
     if(Board->enPas)         key ^= zobrist_enpSq[lsb(Board->enPas)];
 
     Board->key = key;
+}
+
+void print_entry(U64 key) {
+    TTEntry_s CurrentEntry = TT[key % TTEntries];
+    if(CurrentEntry.key != (key >> 48)) {
+        printf("No entry found.\n");
+        return;
+    }
+    printf("Entry found:\n");
+    printf(" Key:        0x%04x\n", (unsigned)CurrentEntry.key);
+    printf(" Move:       ");
+    print_move(CurrentEntry.move);
+    printf("\n");
+    printf(" Node type:  ");
+    if(IS_PV_NODE(CurrentEntry.scoreBound))      printf("PV_NODE\n");
+    else if(IS_CUT_NODE(CurrentEntry.scoreBound)) printf("CUT_NODE\n");
+    else if(IS_ALL_NODE(CurrentEntry.scoreBound)) printf("ALL_NODE\n");
+    else if(IS_BLANK_NODE(CurrentEntry.scoreBound)) printf("BLANK_NODE\n");
+    else                                          printf("UNKNOWN NODE TYPE\n");
+    printf(" Score:      %d\n", SCORE(CurrentEntry.scoreBound));
+    printf(" Depth:      %u\n", (unsigned)CurrentEntry.depth);
+    printf(" RootPly:    %u\n", (unsigned)CurrentEntry.rootPly);
 }
