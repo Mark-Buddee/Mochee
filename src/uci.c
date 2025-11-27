@@ -179,19 +179,22 @@ static void handle_go(char* line) {
         duration = ourTime >= RAPID ? RAPID_STANDARD
                  : ourTime >= BLITZ ? BLITZ_STANDARD
                  :                    BULLET_STANDARD;
-    else if(ourTime >= 15000 && ((theirTime - 60000)*3/8 + 15000 <= ourTime))
+    else if(ourTime >= DANGER_TIME && ((theirTime - 60000)*3/8 + 15000 <= ourTime))
         duration = ourTime >= RAPID ? RAPID_RUSH
                  : ourTime >= BLITZ ? BLITZ_RUSH
                  :                    BULLET_RUSH;
-    else if(ourTime >= 7500 && ((theirTime - 60000)*2/8 + 7500 <= ourTime))
+    else if(ourTime >= INSTANT_TIME && ((theirTime - 60000)*2/8 + 7500 <= ourTime))
         duration = DANGER;
     else 
-        duration = INSTANT; // TODO: Do not allow this to be zero unless I explicitly test it
+        duration = ourTime / 30.0;
 
     if(movetime != -1) duration = movetime;
 
     // printf("duration: %g\n", duration);
-
+    #ifndef NDEBUG
+        printf("ourTime: %d theirTime: %d maximum moveTime: %g\n", ourTime, theirTime, duration);
+    #endif
+    
 	Move bestMove = iterative_deepening(&Board, duration);
     printf("bestmove ");
     print_move(bestMove);
