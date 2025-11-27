@@ -20,21 +20,17 @@ extern unsigned long long tableOverwriteDepthSum;
 
 int is_three_fold(Board_s* Board, int rootPly) {
 
-    // Only need to consider nodes at least 4 plies since the last irreversible move
-    if(Board->hundredPly < 4) return 0;
-
-    // Only look 2, 4, 6, ... plies in the past where the player to move was the same as right now
+    // Repeition is possible only after at least 4 plies
+    // Only look 4, 6, 8, ... plies in the past where the player to move was the same as right now
     // until the last irreversible move (pawn move or capture)
-    // Undos[hisPly - 2], Undos[hisPly - 4] ... Undos[hisPly - hundredPly]
     int posFreq = 0;
-    int deepInSearch = Board->hisPly - rootPly > 2;
-    for(int i = Board->hisPly - 2; i >= Board->hisPly - Board->hundredPly; i = i - 2) {
+    for(int curPly = Board->hisPly - 4; curPly >= Board->hisPly - Board->hundredPly; curPly -= 2) {
 
-        if(Board->Undos[i].key == Board->key) posFreq++;
+        // int inSearch = curPly > rootPly; // are we currently searching this position?
+        int inSearch = 0;
+        int keyMatch = Board->Undos[curPly].key == Board->key; // does the position match?
 
-        if(deepInSearch && posFreq) return 1; // two-fold repetition
-
-        if(posFreq == 2) return 1; // three-fold repetition
+        if(keyMatch && ++posFreq + inSearch == 2) return 1; // found a two-fold repetition in the search or a three-fold overall
 
     }
 
