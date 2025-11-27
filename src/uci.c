@@ -196,7 +196,7 @@ static void handle_go(char* line) {
     printf("bestmove ");
     print_move(bestMove);
     printf("\n");
-    inc_age();
+    // inc_age();
 }
 
 static void handle_stop(void) {

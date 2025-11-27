@@ -70,6 +70,10 @@ static void handle_help() {
         "play  <time (ms)>\n"
         "fen   <fen>\n"
         "<move>\n");
+
+    // for(int i = 0; i < 1000; i++) {
+    //     printf("TT entry %d rootPly: \n", TT[i].rootPly);
+    // }
 }
 
 static void handle_test() {

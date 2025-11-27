@@ -45,24 +45,30 @@ int main(void) {
 		4096 MB num hits: 1096976, num updates: 570400, num overwrites: 2043243
 	*/
 
-	unsigned long long TT_SIZE_MB = 256ULL;
+	unsigned long long TT_SIZE_MB = 512ULL;
 	unsigned long long bytes = TT_SIZE_MB * 1024ULL * 1024ULL;
+	// unsigned long long bytes = 64;
 
 	TTEntries = bytes / sizeof(TTEntry_s);
 	TT = malloc(TTEntries * sizeof(TTEntry_s));
-
-	
     if (!TT) {
         fprintf(stderr, "Failed to allocate transposition table!\n");
         return 1;
     }
 
 	// printf("TTEntries: %llu\n", TT_ENTRIES);
-	printf("TT intended entries: %llu\n", TTEntries);
-	printf("TT actual bytes:     %zu\n", TTEntries * sizeof(TTEntry_s));
-	printf("TT actual size (MB): %llu\n",
-       (unsigned long long)(TTEntries * sizeof(TTEntry_s)) / (1024ULL * 1024ULL));
-	printf("Size of each entry:  %zu\n", sizeof(TTEntry_s));
+	// printf("TT intended entries: %llu\n", TTEntries);
+	// printf("TT actual bytes:     %zu\n", TTEntries * sizeof(TTEntry_s));
+	// printf("TT actual size (MB): %llu\n",
+    //    (unsigned long long)(TTEntries * sizeof(TTEntry_s)) / (1024ULL * 1024ULL));
+	// printf("Size of each entry:  %zu\n", sizeof(TTEntry_s));
+
+    // int num1 = 200;
+	// uint8_t num2 = 0;
+    // printf("Number 1: %d, Number 2: %d\n", num1, num2);
+	// printf("Saved as uint8_t: %u\n", (uint8_t)num1);
+	// int8_t ageDifference = (int8_t)((uint8_t)num1 - num2);
+    // printf("Age difference: %d\n", ageDifference);
 
 	setbuf(stdout, NULL);
 
