@@ -39,8 +39,8 @@ void add_entry(U64 key, Move bestMove, uint16_t scoreBound, uint8_t depth, int r
 void init_tt(void);
 
 void init_zobrist(void);
-
 void init_zobrist_key(Board_s* const Board);
-void init_tt(void);
+
+void print_entry(U64 key);
 
 #endif
