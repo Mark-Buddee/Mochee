@@ -43,44 +43,29 @@ void add_entry(U64 key, Move bestMove, uint16_t scoreBound, uint8_t depth, int r
     int keyMatch = CurrentEntry->key == (key >> 48);
     int deeper = depth > CurrentEntry->depth;
     int8_t ageDifference = (int8_t)((uint8_t)rootPly - CurrentEntry->rootPly);
-
-    // if(CurrentEntry->rootPly == 200) {
-    //     printf("yay\n");
-    // }
-
-    // static int greatestAgeDiff = 0;
-    // if(ageDifference > greatestAgeDiff) {
-    //     greatestAgeDiff = ageDifference;
-    //     printf("Greatest age difference: %d\n", greatestAgeDiff);
-    //     printf("rootPly: %d, unsigned rootPly: %u, CurrentEntry->rootPly: %u\n", rootPly, (uint8_t)rootPly, CurrentEntry->rootPly);
-    // }
-    // if(ageDifference) printf("Age difference: %d\n", ageDifference);
-
-    // Prioritise greater depth on key matches and non-aged entries
+    
     if(!deeper) {
 
         // Oldest entries (age difference > 3) can always be overwritten, regardless of depth
         // or if its in the future age difference <0
 
-        // if(CurrentEntry->rootPly != 0) return;
-        if(!ageDifference) return;
+        if(!ageDifference) return; // same age, not deeper -> do not overwrite
 
-        if(keyMatch && (depth != CurrentEntry->depth || (IS_PV_NODE(CurrentEntry->scoreBound) || !IS_PV_NODE(scoreBound)))) {
+        if(keyMatch && (depth != CurrentEntry->depth || IS_PV_NODE(CurrentEntry->scoreBound) || !IS_PV_NODE(scoreBound))) {
             assert(depth != CurrentEntry->depth || IS_PV_NODE(CurrentEntry->scoreBound) || !IS_PV_NODE(scoreBound)); // Don't miss the chance to upgrade to a PV node
-            CurrentEntry->rootPly = (uint8_t)rootPly; // untouched keymatches can update their age to 0
+            CurrentEntry->rootPly = (uint8_t)rootPly; // untouched keymatches can update their age
             return;
-
         }
 
     }
 
     #ifndef NDEBUG
 
-    // Don't downgrade a PV entry to non-PV
-    if(keyMatch && CurrentEntry->depth == depth) assert(!IS_PV_NODE(CurrentEntry->scoreBound) || IS_PV_NODE(scoreBound));
-    
-    if (keyMatch) TTStats.updates++;
-    else if (CurrentEntry->key) TTStats.overwrites++;
+        // Don't downgrade a PV entry to non-PV
+        if(keyMatch && CurrentEntry->depth == depth) assert(!IS_PV_NODE(CurrentEntry->scoreBound) || IS_PV_NODE(scoreBound));
+        
+        if (keyMatch) TTStats.updates++;
+        else if (CurrentEntry->key) TTStats.overwrites++;
 
     #endif
 
