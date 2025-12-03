@@ -21,6 +21,6 @@ int clamp(int lower, int upper, int score);
 int alpha_beta(Board_s* const Board, int alpha, int beta, int depth, int rootPly, clock_t endTime);
 void do_search(Board_s* const Board, int depth);
 void score_moves(Board_s* Board, Move_s* cur, Move_s* end, Move bestMove);
-Move iterative_deepening(Board_s* const Board, double duration);
+Move iterative_deepening(Board_s* const Board, double maxDuration);
 
 #endif

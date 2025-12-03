@@ -217,7 +217,15 @@ int quiesce(Board_s* const Board, int alpha, int beta, int rootPly) {
     // return alpha;
 }
 
-int alpha_beta(Board_s* const Board, int alpha, int beta, int depth, int rootPly, clock_t endTime) {
+// TODO: change return type to int16_t
+int alpha_beta(Board_s* const Board, int alpha, int beta, int depth, int rootPly, clock_t endTime, Move* rootBestMove) {
+
+    #ifndef NDEBUG
+        nodesSearched++;
+    #endif
+
+    // TODO: Fix all return values
+    // TODO: Fix all calls to alpha_beta
 
     // Fifty move rule
     if(Board->hundredPly == HUNDRED_PLIES) return 0;
@@ -226,17 +234,38 @@ int alpha_beta(Board_s* const Board, int alpha, int beta, int depth, int rootPly
     if(is_three_fold(Board, rootPly)) return 0;
     
     Move bestMove = NULL_MOVE;
+    int isRootNode = Board->hisPly == rootPly;
+    
     TTEntry_s Entry = TT[Board->key % TTEntries];
-
     if(Entry.key == Board->key >> 48) {
 
-        if(Entry.depth >= depth) {
+        int foundMate = IS_PV_NODE(Entry.scoreBound) && abs(SCORE(Entry.scoreBound)) >= INF - MAX_DEPTH;
+        if(Entry.depth >= depth || foundMate) { // sufficient depth or mate score is valid
+
             #ifndef NDEBUG
             TTStats.hits++;
             #endif
-            if(IS_PV_NODE(Entry.scoreBound)) return SCORE(Entry.scoreBound); // exact score
-            if(IS_CUT_NODE(Entry.scoreBound) && SCORE(Entry.scoreBound) >= beta) return beta; // lower bound exceeds beta
-            if(IS_ALL_NODE(Entry.scoreBound) && SCORE(Entry.scoreBound) <= alpha) return alpha; // upper bound is below alpha
+
+            // if(isRootNode) assert(Entry.move != NULL_MOVE);
+
+            if(IS_PV_NODE(Entry.scoreBound)) {
+                assert(!isRootNode || Entry.move != NULL_MOVE);
+                if (isRootNode) *rootBestMove = Entry.move;
+                return SCORE(Entry.scoreBound); // exact score
+            }
+            if(IS_CUT_NODE(Entry.scoreBound) && SCORE(Entry.scoreBound) >= beta) {
+                assert(!isRootNode || Entry.move != NULL_MOVE);
+                // assert(!isRootNode);
+                if(isRootNode) *rootBestMove = Entry.move;
+                return beta; // lower bound exceeds beta
+            }
+            if(IS_ALL_NODE(Entry.scoreBound) && SCORE(Entry.scoreBound) <= alpha) {
+                assert(!isRootNode || Entry.move != NULL_MOVE);
+                // assert(!isRootNode);
+                if(isRootNode) *rootBestMove = Entry.move;
+                return alpha; // upper bound is below alpha
+            }
+
         }
         bestMove = Entry.move;
 
@@ -263,34 +292,52 @@ int alpha_beta(Board_s* const Board, int alpha, int beta, int depth, int rootPly
 
     score_moves(Board, List, end, bestMove);
     partial_insertion_sort(List, end, INSERTION_SORT_MIN);
+    
+    // in case all moves fail to improve alpha (checkmate against us)
+    if(bestMove == NULL_MOVE) bestMove = cur->move;
+    // or insufficient time to complete search
+    if(isRootNode && *rootBestMove == NULL_MOVE) *rootBestMove = bestMove;
 
     int nodeType = ALL_NODE;
     while(1) {
 
         do_move(Board, cur);
-        int score = -alpha_beta(Board, -beta, -alpha, depth - 1, rootPly, endTime);
+        int score = -alpha_beta(Board, -beta, -alpha, depth - 1, rootPly, endTime, rootBestMove);
         undo_move(Board);
 
         assert(abs(score) <= INF); // possible but unlikely for this condition to be broken. Can be fixed by hardcapping evaluation scores
 
+        // Beta cutoff
         if(score >= beta) {
-            add_entry(Board->key, cur->move, SCOREBOUND(beta, CUT_NODE), depth);
+            if(isRootNode) *rootBestMove = cur->move;
+            add_entry(Board->key, cur->move, SCOREBOUND(beta, CUT_NODE), depth, rootPly);
             return beta;
         }
 
+        // Raise alpha
         if(score > alpha) {
+
             alpha = score;
             nodeType = PV_NODE;
             bestMove = cur->move;
+
+            if(isRootNode) *rootBestMove = bestMove;
+
         }
 
         cur++;
-        if(cur == end) break;
+        if(cur == end) break; // all children searched
 
-        if(clock() > endTime) {
-            // This breaks all instantiations of alpha_beta, only saving nodes that raised alpha
+        // Timeout
+        // if(clock() > endTime && (depth > 1 || *rootBestMove != NULL_MOVE)) {
+        if(clock() >= endTime) {
+
+            assert(*rootBestMove != NULL_MOVE); // TODO: This instead of the above second half of condition
+            assert(bestMove != NULL_MOVE);
+
             if(nodeType == PV_NODE) add_entry(Board->key, bestMove, SCOREBOUND(alpha, CUT_NODE), depth, rootPly); // save lower bounds where possible
-            return beta;
+            return beta; // don't searching siblings
+        
         }
     }
 
@@ -305,9 +352,10 @@ void do_search(Board_s* const Board, int depth) {
     clock_t endTime = clock() + 999999*CLOCKS_PER_SEC;
     // clock_t endTime = -1;
     for(int i = 1; i <= depth; i++) {
+        Move bestMove;
         
         start = clock();
-        alpha_beta(Board, -INF, INF, i, Board->hisPly, endTime);
+        alpha_beta(Board, -INF, INF, i, Board->hisPly, endTime, &bestMove);
         end = clock();
         double dt = (double)(end-start) / CLOCKS_PER_SEC;
 
@@ -323,23 +371,74 @@ void do_search(Board_s* const Board, int depth) {
     }
 }
 
-Move iterative_deepening(Board_s* const Board, double duration) {
-    clock_t endTime = clock() + duration;
+Move iterative_deepening(Board_s* const Board, double maxDuration) {
 
-    // printf("DEPTH  BEST\n");
+    clock_t endTime = clock() + maxDuration;
+
+    Move bestMove = NULL_MOVE;
     for(int depth = 1; depth < MAX_DEPTH; depth++) {
-        // init_tt();
-        alpha_beta(Board, -INF, INF, depth, Board->hisPly, endTime);
-        // if(clock() > endTime) break;
-        // if(clock() > endTime) printf("\n\n");
-        // printf("\033[F"); // Line clear
-        // printf("%4d ply  ", depth);
-        // print_variation(Board, depth);
-        // printf("\n");
-        if(clock() > endTime) break;
+
+        Move currentBestMove = NULL_MOVE;
+        
+        clock_t iterationStartTime = clock();
+        int score = alpha_beta(Board, -INF, INF, depth, Board->hisPly, endTime, &currentBestMove);
+        clock_t iterationEndTime = clock();
+
+        #ifndef NDEBUG
+            printf("depth: %2d, score: %3d, iterationDuration: %4g s, bestMove: ", depth, score, (double)(iterationEndTime - iterationStartTime) / CLOCKS_PER_SEC);
+            print_move(currentBestMove);
+            printf(" Variation: ");
+            print_variation(Board, depth);
+            printf("\n");
+        #endif
+
+        
+        if(iterationEndTime >= endTime) {
+
+            if(depth == 1) bestMove = currentBestMove; // ensure at least depth 1 is searched
+            
+            #ifndef NDEBUG
+                printf("Time's up!\n");
+            #endif
+            if(bestMove == NULL_MOVE) printf("Error: bestMove is NULL_MOVE! 1 \n");
+            assert(bestMove != NULL_MOVE);
+
+            break;
+        }
+
+        bestMove = currentBestMove;
+        
+        if(abs(score) >= INF - MAX_DEPTH) {
+            #ifndef NDEBUG
+                printf("Mate found!\n");
+            #endif
+            if(bestMove == NULL_MOVE) printf("Error: bestMove is NULL_MOVE! 2 \n");
+            assert(bestMove != NULL_MOVE);
+
+            break;
+        }
+        
+        double remainingTime = (double)(endTime - iterationEndTime) / CLOCKS_PER_SEC;
+        double iterationDuration = (double)(iterationEndTime - iterationStartTime) / CLOCKS_PER_SEC;
+
+        // There may be still a deep enough result in the TT! ignore the following code then.
+        // if(depth >= 6 && iterationDuration == 0 && remainingTime < pow(3.9, depth-8)) {
+        //     #ifndef NDEBUG
+        //     printf("Insufficient time (lots of table hits)\n");
+        //     #endif
+        //     break; // We've had lots of table hits, but not enough time for next iteration
+        // }
+
+        if(remainingTime < iterationDuration * 5.5) {
+            #ifndef NDEBUG
+                printf("Insufficient time (prediction)\n");
+            #endif
+            if(bestMove == NULL_MOVE) printf("Error: bestMove is NULL_MOVE! 3 \n");
+            break; // not enough time for next iteration
+        }
+
     }
 
-    assert(TT[Board->key % TTEntries].key == Board->key >> 48);
-    assert(TT[Board->key % TTEntries].move != NULL_MOVE);
-    return TT[Board->key % TTEntries].move;
+    return bestMove;
+
 }
