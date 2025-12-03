@@ -10,6 +10,7 @@
 
 #ifndef NDEBUG
 struct TTStats_s TTStats = {0};
+unsigned long long nodesSearched = 0;
 #endif
 
 void print_bitBoard(U64 bitBoard) {

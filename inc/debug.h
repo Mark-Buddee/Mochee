@@ -2,13 +2,14 @@
 #define DEBUG_H
 
 #ifndef NDEBUG
-struct TTStats_s {
-    unsigned long long hits;
-    unsigned long long updates;
-    unsigned long long overwrites;
-};
+    struct TTStats_s {
+        unsigned long long hits;
+        unsigned long long updates;
+        unsigned long long overwrites;
+    };
 
-extern struct TTStats_s TTStats;
+    extern struct TTStats_s TTStats;
+    extern unsigned long long nodesSearched;
 #endif
 
 void print_bitBoard(U64 bitBoard);
