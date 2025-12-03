@@ -290,6 +290,13 @@ int alpha_beta(Board_s* const Board, int alpha, int beta, int depth, int rootPly
         return 0; // stalemate
     }
 
+    // If only one legal move, no need to search further
+    if(isRootNode && (end - cur) == 1) {
+        add_entry(Board->key, cur->move, SCOREBOUND(0, PV_NODE), 0, rootPly); // This is probably a waste of time
+        *rootBestMove = cur->move;
+        return 0; // TODO: Evaluate properly
+    }
+
     score_moves(Board, List, end, bestMove);
     partial_insertion_sort(List, end, INSERTION_SORT_MIN);
     
