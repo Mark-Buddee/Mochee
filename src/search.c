@@ -158,7 +158,7 @@ int quiesce(Board_s* const Board, int alpha, int beta, int rootPly) {
                     : get_value(Board->pieces[DST(cur->move)]);
 
             assert(cpt);
-            if(staticEval + cpt < alpha - DELTA_VAL) {
+            if(staticEval + cpt + DELTA_VAL < alpha) {
                 cur++;
                 continue;
             }
@@ -177,7 +177,7 @@ int quiesce(Board_s* const Board, int alpha, int beta, int rootPly) {
     }
 
     // If alpha has been raised, or if all moves have been searched, there is no need to keep searching
-    if(raisedAlpha || Board->checkers) return alpha; // Board->hisPly - startPly < MAX_QUIET_CHECK_PLIES
+    // if(raisedAlpha || Board->checkers) return alpha; // Board->hisPly - startPly < MAX_QUIET_CHECK_PLIES
 
     // No capture suggests raising alpha, no checks, this is a truly quiet position
     // if(Board->hisPly > 16) print_detailed(Board, Board->side);
