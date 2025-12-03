@@ -26,8 +26,8 @@ int is_three_fold(Board_s* Board, int rootPly) {
     int posFreq = 0;
     for(int curPly = Board->hisPly - 4; curPly >= Board->hisPly - Board->hundredPly; curPly -= 2) {
 
-        // int inSearch = curPly > rootPly; // are we currently searching this position?
-        int inSearch = 0;
+        int inSearch = curPly > rootPly; // are we currently searching this position?
+        // int inSearch = 0;
         int keyMatch = Board->Undos[curPly].key == Board->key; // does the position match?
 
         if(keyMatch && ++posFreq + inSearch == 2) return 1; // found a two-fold repetition in the search or a three-fold overall
