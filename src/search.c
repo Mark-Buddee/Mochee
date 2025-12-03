@@ -226,13 +226,13 @@ int alpha_beta(Board_s* const Board, int alpha, int beta, int depth, int rootPly
 
     // TODO: Fix all return values
     // TODO: Fix all calls to alpha_beta
-
+    
     // Fifty move rule
     if(Board->hundredPly == HUNDRED_PLIES) return 0;
-
+    
     // 3-fold repetition
     if(is_three_fold(Board, rootPly)) return 0;
-    
+
     Move bestMove = NULL_MOVE;
     int isRootNode = Board->hisPly == rootPly;
     
@@ -243,7 +243,7 @@ int alpha_beta(Board_s* const Board, int alpha, int beta, int depth, int rootPly
         if(Entry.depth >= depth || foundMate) { // sufficient depth or mate score is valid
 
             #ifndef NDEBUG
-            TTStats.hits++;
+                TTStats.hits++;
             #endif
 
             // if(isRootNode) assert(Entry.move != NULL_MOVE);
@@ -304,7 +304,7 @@ int alpha_beta(Board_s* const Board, int alpha, int beta, int depth, int rootPly
     if(bestMove == NULL_MOVE) bestMove = cur->move;
     // or insufficient time to complete search
     if(isRootNode && *rootBestMove == NULL_MOVE) *rootBestMove = bestMove;
-
+    
     int nodeType = ALL_NODE;
     while(1) {
 
