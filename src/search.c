@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <assert.h>
+#include "math.h"
 #include "defs.h"
 #include "move.h"
 #include "eval.h"
@@ -135,7 +136,7 @@ int quiesce(Board_s* const Board, int alpha, int beta, int rootPly) {
 
     if(Board->checkers) {
         end = gen_legal(Board, List);
-        if(cur == end) return alpha; // checkmate
+        if(cur == end) return -INF + (Board->hisPly - rootPly); // checkmate
 
     } else {
         if(staticEval >= beta) return beta; // Futility pruning
@@ -253,8 +254,8 @@ int alpha_beta(Board_s* const Board, int alpha, int beta, int depth, int rootPly
     // if(cur == end) return Board->checkers ? alpha : 0;
     if(cur == end) {
         if(Board->checkers) {
-            add_entry(Board->key, NULL_MOVE, SCOREBOUND(-INF, PV_NODE), MAX_DEPTH);
-            return alpha; // checkmate
+            add_entry(Board->key, NULL_MOVE, SCOREBOUND(-INF + (Board->hisPly - rootPly), PV_NODE), 0, rootPly); // This is probably a waste of time
+            return -INF + (Board->hisPly - rootPly); // checkmate
         }
         add_entry(Board->key, NULL_MOVE, SCOREBOUND(0, PV_NODE), 0, rootPly); // This is probably a waste of time
         return 0; // stalemate
