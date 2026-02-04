@@ -21,7 +21,7 @@ Mochee was initially developed to crush the following friends of mine decisively
 With this achievement on the horizon, Mochee's new goal is to reach 2500 rapid rating on Lichess, with entirely self-trained values. That would confidently place Mochee in the top 0.01% of human players on the site.
 
 ## Architecture
-Mochee is a single-threaded, classic alpha-beta chess engine, relying on well documented search- , evaluation- , and time management techniques. Eventually Mochee will use an Efficiently Updatable Neural Network (NNUE) for static position evaluation using entirely self-trained values.
+Mochee is a single-threaded, classic alpha-beta chess engine relying on well documented search- , evaluation- , and time management techniques. Eventually Mochee will use an Efficiently Updatable Neural Network (NNUE) for static position evaluation using entirely self-trained values.
 
 In order of implementation, Mochee employs (or plans to employ) the following techniques:
 
