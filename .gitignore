@@ -9,6 +9,5 @@
 *.gcda
 
 # Not to be shared
-notes/
+docs/
 unused/
-vice/
