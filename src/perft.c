@@ -46,7 +46,7 @@ void perft(Board_s* const Board, const int depth) {
 }
 
 void perft_unit_test(void) {
-    FILE* fp = fopen("perft.csv", "r");
+    FILE* fp = fopen("tests/perft.csv", "r");
     char line[STREAM_BUFF_SIZE];
     printf("PERFT UNIT TEST\n");
     printf("    PHASE    TEST TYPE  DEPTH  NODES        RESULT\n");
