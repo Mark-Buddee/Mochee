@@ -237,10 +237,11 @@ int alpha_beta(Board_s* const Board, int alpha, int beta, int depth, int rootPly
     int isRootNode = Board->hisPly == rootPly;
     
     TTEntry_s Entry = TT[Board->key % TTEntries];
-    if(Entry.key == Board->key >> 48) {
+    if(Entry.key == KEY_TOP(Board->key)) {
 
-        int foundMate = IS_PV_NODE(Entry.scoreBound) && abs(SCORE(Entry.scoreBound)) >= INF - MAX_DEPTH;
-        if(Entry.depth >= depth || foundMate) { // sufficient depth or mate score is valid
+        // int foundMate = IS_PV_NODE(Entry.scoreBound) && abs(SCORE(Entry.scoreBound)) >= INF - MAX_DEPTH;
+        if(Entry.depth >= depth) {
+        // if(Entry.depth >= depth || foundMate) { // sufficient depth or mate score is valid
 
             #ifndef NDEBUG
                 TTStats.hits++;
@@ -251,18 +252,18 @@ int alpha_beta(Board_s* const Board, int alpha, int beta, int depth, int rootPly
             if(IS_PV_NODE(Entry.scoreBound)) {
                 assert(!isRootNode || Entry.move != NULL_MOVE);
                 if (isRootNode) *rootBestMove = Entry.move;
-                return SCORE(Entry.scoreBound); // exact score
-            }
-            if(IS_CUT_NODE(Entry.scoreBound) && SCORE(Entry.scoreBound) >= beta) {
+                if(!isRootNode && (SCORE(Entry.scoreBound) < beta || SCORE(Entry.scoreBound) > alpha)) {
+                    return SCORE(Entry.scoreBound); // exact score
+                }
+            } else if(IS_CUT_NODE(Entry.scoreBound) && SCORE(Entry.scoreBound) >= beta) {
                 assert(!isRootNode || Entry.move != NULL_MOVE);
-                // assert(!isRootNode);
-                if(isRootNode) *rootBestMove = Entry.move;
+                assert(!isRootNode);
+                // if(isRootNode) *rootBestMove = Entry.move;
                 return beta; // lower bound exceeds beta
-            }
-            if(IS_ALL_NODE(Entry.scoreBound) && SCORE(Entry.scoreBound) <= alpha) {
+            } else if(IS_ALL_NODE(Entry.scoreBound) && SCORE(Entry.scoreBound) <= alpha) {
                 assert(!isRootNode || Entry.move != NULL_MOVE);
-                // assert(!isRootNode);
-                if(isRootNode) *rootBestMove = Entry.move;
+                assert(!isRootNode);
+                // if(isRootNode) *rootBestMove = Entry.move;
                 return alpha; // upper bound is below alpha
             }
 
@@ -280,7 +281,7 @@ int alpha_beta(Board_s* const Board, int alpha, int beta, int depth, int rootPly
     Move_s* cur = List;
     Move_s* end = gen_legal(Board, List);
 
-    // if(cur == end) return Board->checkers ? alpha : 0;
+    // if(cur == end) return Board->checkers ? -INF + (Board->hisPly - rootPly) : 0;
     if(cur == end) {
         if(Board->checkers) {
             add_entry(Board->key, NULL_MOVE, SCOREBOUND(-INF + (Board->hisPly - rootPly), PV_NODE), 0, rootPly); // This is probably a waste of time
@@ -316,6 +317,7 @@ int alpha_beta(Board_s* const Board, int alpha, int beta, int depth, int rootPly
 
         // Beta cutoff
         if(score >= beta) {
+            if(isRootNode) return beta;
             if(isRootNode) *rootBestMove = cur->move;
             add_entry(Board->key, cur->move, SCOREBOUND(beta, CUT_NODE), depth, rootPly);
             return beta;
@@ -348,6 +350,7 @@ int alpha_beta(Board_s* const Board, int alpha, int beta, int depth, int rootPly
         }
     }
 
+    if(isRootNode && nodeType != PV_NODE) return alpha; // Fail low
     add_entry(Board->key, bestMove, SCOREBOUND(alpha, nodeType), depth, rootPly);
     return alpha;
 }
@@ -388,8 +391,45 @@ Move iterative_deepening(Board_s* const Board, double maxDuration) {
         Move currentBestMove = NULL_MOVE;
         
         clock_t iterationStartTime = clock();
-        int score = alpha_beta(Board, -INF, INF, depth, Board->hisPly, endTime, &currentBestMove);
-        clock_t iterationEndTime = clock();
+        clock_t iterationEndTime;
+        
+
+        // int bounds[2];
+        // get_aspiration_window(prevScores, depth, &bounds[LOWER], &bounds[UPPER]);
+        
+        int score = -INF;
+        // int reps = 0;
+        while(1) {
+
+            // printf("Aspiration window for depth %d: [%d, %d]\n", depth, bounds[LOWER], bounds[UPPER]);
+            // currentBestMove = NULL_MOVE;
+            // score = alpha_beta(Board, bounds[LOWER], bounds[UPPER], depth, Board->hisPly, endTime, &currentBestMove);
+            score = alpha_beta(Board, -INF, INF, depth, Board->hisPly, endTime, &currentBestMove);
+            iterationEndTime = clock();
+
+            // assert(score >= bounds[LOWER] && score <= bounds[UPPER]);
+
+            // if(iterationEndTime >= endTime || (score > bounds[LOWER] && score < bounds[UPPER])) {
+            if(iterationEndTime >= endTime) {
+                break; // score is within aspiration window or time's up
+            }
+
+            // reps++;
+            // printf("Aspiration window failed at depth %d with score %d (bounds [%d, %d]), retrying (%d)\n", depth, score, bounds[LOWER], bounds[UPPER], reps);
+            // if(reps >= 4) {
+            //     // Give up on aspiration windows
+            //     bounds[LOWER] = -INF;
+            //     bounds[UPPER] = INF;
+            //     continue;
+            // }
+
+            // int mean = (bounds[LOWER] + bounds[UPPER]) / 2;
+            // printf("lower %d, mean %d, upper %d \n", bounds[LOWER], mean, bounds[UPPER]);
+            // if(score == bounds[LOWER]) bounds[LOWER] = mean - (mean - bounds[LOWER]) * 4;
+            // else if(score == bounds[UPPER]) bounds[UPPER] = mean + (bounds[UPPER] - mean) * 4;
+
+        }
+        // prevScores[depth] = score;
 
         #ifndef NDEBUG
             printf("depth: %2d, score: %3d, iterationDuration: %4g s, bestMove: ", depth, score, (double)(iterationEndTime - iterationStartTime) / CLOCKS_PER_SEC);

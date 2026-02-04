@@ -186,16 +186,17 @@ static void handle_go(char* line) {
     else if(ourTime >= INSTANT_TIME && ((theirTime - 60000)*2/8 + 7500 <= ourTime))
         duration = DANGER;
     else 
-        duration = ourTime / 30.0;
+        duration = ourTime / 50.0;
 
     if(movetime != -1) duration = movetime;
 
     // printf("duration: %g\n", duration);
     #ifndef NDEBUG
-        printf("ourTime: %d theirTime: %d maximum moveTime: %g\n", ourTime, theirTime, duration);
+        // printf("ourTime: %d theirTime: %d maximum moveTime: %g\n", ourTime, theirTime, duration);
     #endif
     
 	Move bestMove = iterative_deepening(&Board, duration);
+    printf("info depth 2 score cp 214 time 1242 nodes 2124 nps 34928 pv e2e4 e7e5 g1f3\n");
     printf("bestmove ");
     print_move(bestMove);
     printf("\n");
