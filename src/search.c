@@ -346,6 +346,9 @@ int alpha_beta(Board_s* const Board, int alpha, int beta, int depth, int rootPly
             assert(bestMove != NULL_MOVE);
 
             if(nodeType == PV_NODE) add_entry(Board->key, bestMove, SCOREBOUND(alpha, CUT_NODE), depth, rootPly); // save lower bounds where possible
+            
+            // if(isRootNode) return alpha;
+            
             return beta; // don't searching siblings
         
         }
@@ -364,13 +367,31 @@ void do_search(Board_s* const Board, int depth) {
     // clock_t endTime = -1;
     for(int i = 1; i <= depth; i++) {
         Move bestMove;
+
+        // int goingToBeRealScore = 0;
+        // if(i == 1) goingToBeRealScore = 46;
+        // else if(i == 2) goingToBeRealScore = 0;
+        // else if(i == 3) goingToBeRealScore = 37;
+        // else if(i == 4) goingToBeRealScore = 0;
+        // else if(i == 5) goingToBeRealScore = 37;
+        // else if(i == 6) goingToBeRealScore = 1;
+        // else if(i == 7) goingToBeRealScore = 38;
+        // else if(i == 8) goingToBeRealScore = 4;
+        // else if(i == 9) goingToBeRealScore = 39;
+        // else if(i == 10) goingToBeRealScore = 9;
+        // else if(i == 11) goingToBeRealScore = 35;
+        // else if(i == 12) goingToBeRealScore = 3;
+        // else if(i == 13) goingToBeRealScore = 31;
+        // else if(i == 14) goingToBeRealScore = 6;
+        // else if(i == 15) goingToBeRealScore = 28;
         
         start = clock();
         alpha_beta(Board, -INF, INF, i, Board->hisPly, endTime, &bestMove);
+        // alpha_beta(Board, goingToBeRealScore-50, goingToBeRealScore+50, i, Board->hisPly, endTime, &bestMove);
         end = clock();
         double dt = (double)(end-start) / CLOCKS_PER_SEC;
 
-        assert(TT[Board->key % TTEntries].key == Board->key >> 48);
+        assert(TT[Board->key % TTEntries].key == KEY_TOP(Board->key));
         assert(TT[Board->key % TTEntries].move != NULL_MOVE);
         int score = SCORE(TT[Board->key % TTEntries].scoreBound);
         int trueEval = Board->side == WHITE ? score : -score;
@@ -387,10 +408,10 @@ Move iterative_deepening(Board_s* const Board, double maxDuration) {
     clock_t endTime = clock() + maxDuration;
 
     Move bestMove = NULL_MOVE;
+    // int prevScores[MAX_DEPTH] = {0};
     for(int depth = 1; depth < MAX_DEPTH; depth++) {
 
         Move currentBestMove = NULL_MOVE;
-        
         clock_t iterationStartTime = clock();
         clock_t iterationEndTime;
         
@@ -488,5 +509,38 @@ Move iterative_deepening(Board_s* const Board, double maxDuration) {
     }
 
     return bestMove;
+
+}
+
+void get_aspiration_window(int prevScores[], int depth, int* lowerBound, int* upperBound) {
+
+    if(depth == 1) {
+        *lowerBound = -INF;
+        *upperBound = INF;
+    } else if(depth == 2) {
+        int prevScore = prevScores[depth - 1];
+        *lowerBound = prevScore - DEPTH_2_MARGIN;
+        *upperBound = prevScore + DEPTH_2_MARGIN;
+    } else {
+        int prevScore1 = prevScores[depth - 1];
+        int prevScore2 = prevScores[depth - 2];
+        if(prevScore1 > prevScore2) {
+            *lowerBound = prevScore2 - ASPIRATION_MARGIN - (prevScore1 - prevScore2)/4;
+            *upperBound = prevScore1 + ASPIRATION_MARGIN + (prevScore1 - prevScore2)/4;
+        } else if(prevScore1 < prevScore2) {
+            *lowerBound = prevScore1 - ASPIRATION_MARGIN - (prevScore2 - prevScore1)/4;
+            *upperBound = prevScore2 + ASPIRATION_MARGIN + (prevScore2 - prevScore1)/4;
+        } else {
+            // last two previous scores are equal, likely result of consecutive TT hits on previous depths
+            *lowerBound = prevScore1 - ASPIRATION_TT_MARGIN;
+            *upperBound = prevScore1 + ASPIRATION_TT_MARGIN;
+        }
+    }
+
+    if(*lowerBound >= *upperBound) printf("uh oh, gonna assert failure rn\n");
+    assert(*lowerBound < *upperBound);
+    assert(*lowerBound >= -INF);
+    assert(*upperBound <= INF);
+    assert(*upperBound - *lowerBound >= 2);
 
 }
