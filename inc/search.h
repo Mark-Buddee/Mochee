@@ -1,6 +1,12 @@
 #ifndef SEARCH_H
 #define SEARCH_H
 
+#define LOWER 0
+#define UPPER 1
+#define ASPIRATION_MARGIN 0
+#define ASPIRATION_TT_MARGIN 60
+#define DEPTH_2_MARGIN 75
+
 #define INSERTION_SORT_MIN 30
 
 #define TABLE_BEST_BIAS 1000
@@ -18,9 +24,10 @@
 #define MAX_QUIET_CHECK_PLIES 1 // quiet checks are allowed within the first X plies of quiesce
 
 int clamp(int lower, int upper, int score);
-int alpha_beta(Board_s* const Board, int alpha, int beta, int depth, int rootPly, clock_t endTime);
+int alpha_beta(Board_s* const Board, int alpha, int beta, int depth, int rootPly, clock_t endTime, Move* rootBestMove);
 void do_search(Board_s* const Board, int depth);
 void score_moves(Board_s* Board, Move_s* cur, Move_s* end, Move bestMove);
-Move iterative_deepening(Board_s* const Board, double duration);
+Move iterative_deepening(Board_s* const Board, double maxDuration);
+void get_aspiration_window(int prevScores[], int depth, int* lower, int* upper);
 
 #endif

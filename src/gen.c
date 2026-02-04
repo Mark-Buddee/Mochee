@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include "defs.h"
 #include "gen.h"
-#include "tgui.h"
+#include "console.h"
 #include "init.h"
 #include "board.h"
 #include "bitboard.h"
@@ -200,11 +200,11 @@ Move_s* gen_all(const Board_s* Board, Move_s* List, const int side, const int ty
              : type == CAPTURES     ?  Board->byColour[!side]
              :                        ~Board->byType[ALL];
 
-        List = gen_moves(Board, List, mask, side,  QUEEN, quietChecks);
-        List = gen_moves(Board, List, mask, side,   ROOK, quietChecks);
-        List = gen_moves(Board, List, mask, side, BISHOP, quietChecks);
-        List = gen_moves(Board, List, mask, side, KNIGHT, quietChecks);
-        List = gen_pawn_moves(Board, List, mask, side, type);
+             List = gen_moves(Board, List, mask, side,  QUEEN, quietChecks);
+             List = gen_moves(Board, List, mask, side,   ROOK, quietChecks);
+             List = gen_moves(Board, List, mask, side, BISHOP, quietChecks);
+             List = gen_moves(Board, List, mask, side, KNIGHT, quietChecks);
+             List = gen_pawn_moves(Board, List, mask, side, type);
     }
 
     // King moves

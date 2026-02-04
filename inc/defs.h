@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 #define NAME                            "Mochee"
-#define VERSION                         "v1.1"
+#define VERSION                         "v1.3"
 #define NAME_DESC                       "Mother of Chess Engines\nCopyright (C) Chonker Bonker Corporation. All rights reserved."
 #define AUTHOR                          "Buddee890"
 
@@ -169,7 +169,7 @@ typedef struct {
     U64 byColour[NUM_SIDES];
 
     U64 checkers;
-    U64 checkSquares[NUM_SIDES][NUM_PIECES]; // checkSquares[SIDE][EMPTY or KING] are undefined
+    // U64 checkSquares[NUM_SIDES][NUM_PIECES]; // checkSquares[SIDE][EMPTY or KING] are undefined
     // But apparently it's part of the C standard to initialise undefined struct fields with 0 when using a designated initialiser!!! Awesome news
     U64 kingBlockers[NUM_SIDES];
 

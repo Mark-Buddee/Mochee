@@ -8,13 +8,13 @@
 #include "bitboard.h"
 #include "eval.h"
 #include "tt.h"
-#include "tgui.h"
+#include "console.h"
 
 // // Add the current board state to the Transposition Table, or increment the position frequency if it already exists
 // void inc_posFreq(Board_s* const Board) {
 
 //     // Position already exists in transposition table
-//     if(TT[Board->key % TT_ENTRIES].key == Board->key >> 32) { // This is --Almost-- the only key check of the whole program
+//     if(TT[Board->key % TT_ENTRIES].key == KEY_TOP(Board->key)) { // This is --Almost-- the only key check of the whole program
 //         TT[Board->key % TT_ENTRIES].posFreq++; // increment
 //         return;
 //     }
@@ -26,7 +26,7 @@
 //     if(TT[Board->key % TT_ENTRIES].posFreq != 0) return;
 
 //     // Position does not exist in transposition table
-//     TTEntry_s NewEntry = {.key = Board->key >> 32, .move = NULL_MOVE, .scoreBound = BLANK_NODE, .posFreq = 1, .depth = 0, .age = 0};
+//     TTEntry_s NewEntry = {.key = KEY_TOP(Board->key), .move = NULL_MOVE, .scoreBound = BLANK_NODE, .posFreq = 1, .depth = 0, .rootPly = 0}; // TODO rootPly is not 0
 //     TT[Board->key % TT_ENTRIES] = NewEntry;
 
 //     return;
@@ -36,9 +36,9 @@
 // void dec_posFreq(Board_s* const Board) {
 
 //     // Position may not exist in Transposition Table
-//     if(TT[Board->key % TT_ENTRIES].key != Board->key >> 32) {
+//     if(TT[Board->key % TT_ENTRIES].key != KEY_TOP(Board->key)) {
 //         return;
-//         // TTEntry_s NewEntry = {.key = Board->key >> 32, .move = NULL_MOVE, .scoreBound = BLANK_NODE, .posFreq = 1, .depth = 0, .age = 0};
+//         // TTEntry_s NewEntry = {.key = KEY_TOP(Board->key), .move = NULL_MOVE, .scoreBound = BLANK_NODE, .posFreq = 1, .depth = 0, .rootPly = 0}; // TODO rootPly is not 0
 //         // TT[Board->key % TT_ENTRIES] = NewEntry;
 //     }
 
@@ -74,7 +74,9 @@ void do_move(Board_s* const Board, const Move_s* cur) {
         .castlingRights = Board->castlingRights, 
         .hundredPly = Board->hundredPly, 
         .enPas = Board->enPas, 
-        .checkers = Board->checkers,  
+        .checkers = Board->checkers,
+        .kingBlockers[WHITE] = Board->kingBlockers[WHITE],
+        .kingBlockers[BLACK] = Board->kingBlockers[BLACK],
         .staticEval = Board->staticEval, 
         .key = Board->key
     };

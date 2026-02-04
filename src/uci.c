@@ -6,12 +6,13 @@
 #include "defs.h"
 #include "tt.h"
 #include "board.h"
-#include "tgui.h"
+#include "console.h"
 #include "search.h"
 #include "move.h"
 #include "gen.h"
 #include "magic.h"
 #include "init.h"
+#include "debug.h"
 
 static void handle_debug(char* line) {
     (void)line;
@@ -19,13 +20,6 @@ static void handle_debug(char* line) {
 }
 
 static void handle_isready() {
-
-    static int isFirstCall = 1;
-    if(isFirstCall) {
-        isFirstCall = 0;
-        init_all();
-    }
-
     printf("readyok\n");
 }
 
@@ -39,29 +33,22 @@ static void handle_register(char* line) {
     return;
 }
 
-static void handle_position(char* line); // TODO: Delete this once handle_ucinewgame is rewritten
-static void handle_ucinewgame(void) {
-    handle_position("position startpos\n");
-    return;
-}
-
 // position fen fenstr
 // position startpos
 // ... moves e2e4 e7e5 b7b8q
 static void handle_position(char* line) {
 
-	line += 9;
     char *ptrChar = line;
 
-    char start_fen_s[] = START_FEN;
+    // char start_fen_s[] = START_FEN;
 
     if(strncmp(line, "startpos", 8) == 0){
-        Board = board_init(start_fen_s);
+        Board = board_init(START_FEN);
 
     } else {
         ptrChar = strstr(line, "fen");
         if(ptrChar == NULL) {
-            Board = board_init(start_fen_s);
+            Board = board_init(START_FEN);
         } else {
             ptrChar+=4;
             Board = board_init(ptrChar);
@@ -98,38 +85,45 @@ static void handle_position(char* line) {
 
             do_move(&Board, cur);
 
-            while(*ptrChar && *ptrChar!= ' ') ptrChar++;
+            while(*ptrChar && *ptrChar!= ' ' && *ptrChar!= '\n') ptrChar++;
             ptrChar++;
         }
     }
 	// PrintBoard(pos);
 }
 
+static void handle_ucinewgame(void) {
+    handle_position("position startpos\n");
+    return;
+}
+
+// go movetime 10000
 // go depth 6 wtime 180000 btime 100000 binc 1000 winc 1000 movetime 1000 movestogo 40
 static void handle_go(char* line) {
 
-	// int depth = -1, movestogo = 30,movetime = -1;
+	// int depth = -1, movestogo = 30;
 	// int wtime = -1, btime = -1, winc = 0, binc = 0;
+    int movetime = -1;
     char *ptr = NULL;
     int ourTime = 0;
     int theirTime = 0;
-    int ourInc = 0;
-    int theirInc = 0;
+    // int ourInc = 0;
+    // int theirInc = 0;
 	// info->timeset = FALSE;
 
 	// if ((ptr = strstr(line,"infinite"))) {
 	// 	;
 	// }
 
-	if ((ptr = strstr(line,"winc"))) {
-		if(Board.side == WHITE) ourInc = atoi(ptr + 5);
-        else theirInc = atoi(ptr + 5);
-	}
+	// if ((ptr = strstr(line,"winc"))) {
+	// 	if(Board.side == WHITE) ourInc = atoi(ptr + 5);
+    //     else theirInc = atoi(ptr + 5);
+	// }
 
-	if ((ptr = strstr(line,"binc"))) {
-		if(Board.side == WHITE) theirInc = atoi(ptr + 5);
-        else ourInc = atoi(ptr + 5);
-	}
+	// if ((ptr = strstr(line,"binc"))) {
+	// 	if(Board.side == WHITE) theirInc = atoi(ptr + 5);
+    //     else ourInc = atoi(ptr + 5);
+	// }
 
 	if ((ptr = strstr(line,"wtime"))) {
 		if(Board.side == WHITE) ourTime = atoi(ptr + 6);
@@ -140,16 +134,14 @@ static void handle_go(char* line) {
 		if(Board.side == WHITE) theirTime = atoi(ptr + 6);
         else ourTime = atoi(ptr + 6);
 	}
-    // printf("us: %d, them: %d\n", ourTime, theirTime);
-    // printf("ourInc: %d, theirInc: %d\n", ourInc, theirInc);
 
 	// if ((ptr = strstr(line,"movestogo"))) {
 	// 	movestogo = atoi(ptr + 10);
 	// }
 
-	// if ((ptr = strstr(line,"movetime"))) {
-	// 	movetime = atoi(ptr + 9);
-	// }
+	if ((ptr = strstr(line,"movetime"))) {
+		movetime = atoi(ptr + 9);
+	}
 
 	// if ((ptr = strstr(line,"depth"))) {
 	// 	depth = atoi(ptr + 6);
@@ -187,22 +179,28 @@ static void handle_go(char* line) {
         duration = ourTime >= RAPID ? RAPID_STANDARD
                  : ourTime >= BLITZ ? BLITZ_STANDARD
                  :                    BULLET_STANDARD;
-    else if(ourTime >= 15000 && ((theirTime - 60000)*3/8 + 15000 <= ourTime))
+    else if(ourTime >= DANGER_TIME && ((theirTime - 60000)*3/8 + 15000 <= ourTime))
         duration = ourTime >= RAPID ? RAPID_RUSH
                  : ourTime >= BLITZ ? BLITZ_RUSH
                  :                    BULLET_RUSH;
-    else if(ourTime >= 7500 && ((theirTime - 60000)*2/8 + 7500 <= ourTime))
+    else if(ourTime >= INSTANT_TIME && ((theirTime - 60000)*2/8 + 7500 <= ourTime))
         duration = DANGER;
     else 
-        duration = INSTANT;
+        duration = ourTime / 50.0;
+
+    if(movetime != -1) duration = movetime;
 
     // printf("duration: %g\n", duration);
-
+    #ifndef NDEBUG
+        // printf("ourTime: %d theirTime: %d maximum moveTime: %g\n", ourTime, theirTime, duration);
+    #endif
+    
 	Move bestMove = iterative_deepening(&Board, duration);
+    printf("info depth 2 score cp 214 time 1242 nodes 2124 nps 34928 pv e2e4 e7e5 g1f3\n");
     printf("bestmove ");
     print_move(bestMove);
     printf("\n");
-    inc_age();
+    // inc_age();
 }
 
 static void handle_stop(void) {
@@ -223,6 +221,8 @@ void uci(void) {
     printf("id author %s\n", AUTHOR);
     printf("uciok\n");
 
+    init_all();
+
 	char line[STREAM_BUFF_SIZE];
 
 	while (1) {
@@ -231,15 +231,18 @@ void uci(void) {
 
         // printf("%s", line);
 
-        if      (!strncmp(line, "debug",       5)) handle_debug(line);
+        if      (!strncmp(line, "debug",       5)) handle_debug(line + 6);
         else if (!strncmp(line, "isready",     7)) handle_isready();
-        else if (!strncmp(line, "setoption",   9)) handle_setoption(line);
+        else if (!strncmp(line, "setoption",   9)) handle_setoption(line + 10);
         else if (!strncmp(line, "register",    8)) handle_register(line);
         else if (!strncmp(line, "ucinewgame", 10)) handle_ucinewgame();
-        else if (!strncmp(line, "position",    8)) handle_position(line);
-        else if (!strncmp(line, "go",          2)) handle_go(line);
+        else if (!strncmp(line, "position",    8)) handle_position(line + 9);
+        else if (!strncmp(line, "go",          2)) handle_go(line + 3);
         else if (!strncmp(line, "stop",        4)) handle_stop();
         else if (!strncmp(line, "ponderhit",   9)) handle_ponderhit();
-        else if (!strncmp(line, "quit",        4)) handle_quit();
+        else if (!strncmp(line, "quit",        4)) {
+            handle_quit();
+            break;
+        }
     }
 }

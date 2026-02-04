@@ -1,5 +1,13 @@
+# Executables
 *.exe
 
-notes/
+# VScode settings
+.vscode/c_cpp_properties.json
+.vscode/settings.json
+
+# Run-time profiling
+*.gcda
+
+# Not to be shared
+docs/
 unused/
-vice/
