@@ -55,7 +55,7 @@ void print_board(const Board_s* const Board, int flipped) {
 void print_detailed(const Board_s* const Board, int flipped) {
 
     // int posFreq = 0;
-    // if(TT[Board->key % TT_ENTRIES].key == Board->key >> 48) {
+    // if(TT[Board->key % TT_ENTRIES].key == KEY_TOP(Board->key)) {
     //     posFreq = TT[Board->key % TT_ENTRIES].posFreq;
     // }
 
@@ -145,7 +145,7 @@ void print_pgn(const Board_s* const Board) {
 void print_variation(Board_s* const Board, int maxDepth) {
 
     TTEntry_s Entry = TT[Board->key % TTEntries];
-    if(Entry.key != Board->key >> 48) return;
+    if(Entry.key != KEY_TOP(Board->key)) return;
     if(!IS_PV_NODE(Entry.scoreBound)) return;
     Move bestMove = Entry.move;
     if(bestMove == NULL_MOVE) return;
