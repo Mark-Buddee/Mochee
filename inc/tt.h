@@ -19,6 +19,8 @@
 #define SCORE(scoreBound)           ((scoreBound) >> 2)
 #define SCOREBOUND(score, nodeType) (4*(score) + (nodeType))
 
+#define KEY_TOP(key)                ((uint16_t)((key) >> 48)) // TODO: This hardly helps. How much does it hinder?
+
 typedef struct {
     uint16_t key;
     Move move;

@@ -23,7 +23,7 @@ extern unsigned long long tableOverwrites;
 
 // int is_hit(U64 key) {
 //     TTEntry_s CurrentEntry = TT[key % TT_ENTRIES];
-//     if(CurrentEntry.key == (key >> 48)) return 1;
+//     if(CurrentEntry.key == KEY_TOP(key)) return 1;
 //     return 0;
 // }
 
@@ -31,7 +31,7 @@ extern unsigned long long tableOverwrites;
 //     TTEntry_s CurrentEntry = TT[key % TT_ENTRIES];
 
 //     if(IS_PV_NODE(CurrentEntry.scoreBound) && CurrentEntry.rootPly == 0) return; // TODO rootply should not be 0
-//     if((CurrentEntry.key == key >> 48) && (CurrentEntry.depth >= NewEntry.depth)) return;
+//     if((CurrentEntry.key == KEY_TOP(key)) && (CurrentEntry.depth >= NewEntry.depth)) return;
 
 //     TT[key % TT_ENTRIES] = NewEntry;
 // }
@@ -40,7 +40,7 @@ void add_entry(U64 key, Move bestMove, uint16_t scoreBound, uint8_t depth, int r
 
     TTEntry_s* CurrentEntry = &TT[key % TTEntries];
 
-    int keyMatch = CurrentEntry->key == (key >> 48);
+    int keyMatch = CurrentEntry->key == KEY_TOP(key);
     int deeper = depth > CurrentEntry->depth;
     int8_t ageDifference = (int8_t)((uint8_t)rootPly - CurrentEntry->rootPly);
     
@@ -79,12 +79,12 @@ void add_entry(U64 key, Move bestMove, uint16_t scoreBound, uint8_t depth, int r
     // if(IS_PV_NODE(scoreBound)) printf(" [PV NODE]");
     // else if(IS_CUT_NODE(scoreBound)) printf(" [CUT NODE]");
     // else if(IS_ALL_NODE(scoreBound)) printf(" [ALL NODE]");
-    // printf(" key: 0x%04x", (unsigned)(key >> 48));
+    // printf(" key: 0x%04x", (unsigned)(KEY_TOP(key));
     // printf("\n");
 
     // Write to / overwrite the transposition table
-    TTEntry_s NewEntry = {key >> 48, bestMove, scoreBound, depth, (uint8_t)rootPly};
-    // TTEntry_s NewEntry = {key >> 48, bestMove, scoreBound, depth, 0};
+    TTEntry_s NewEntry = {KEY_TOP(key), bestMove, scoreBound, depth, (uint8_t)rootPly};
+    // TTEntry_s NewEntry = {KEY_TOP(key), bestMove, scoreBound, depth, 0};
     *CurrentEntry = NewEntry;
     
 }
@@ -92,7 +92,7 @@ void add_entry(U64 key, Move bestMove, uint16_t scoreBound, uint8_t depth, int r
 // int is_table_hit(U64 key, int depth) {
 //     TTEntry_s CurrentEntry = TT[key % TT_ENTRIES];
 //     if(CurrentEntry.key == 0) return 0;
-//     if(CurrentEntry.key != (key >> 48)) {
+//     if(CurrentEntry.key != (KEY_TOP(key))) {
 //         tableOverwrites++;
 //         return 0;
 //     }
@@ -152,7 +152,7 @@ void init_zobrist_key(Board_s* const Board) {
 
 void print_entry(U64 key) {
     TTEntry_s CurrentEntry = TT[key % TTEntries];
-    if(CurrentEntry.key != (key >> 48)) {
+    if(CurrentEntry.key != KEY_TOP(key)) {
         printf("No entry found.\n");
         return;
     }

@@ -156,7 +156,7 @@ static void handle_play(char* line, int flipped){
     do_move(&Board, &cur);
 
     // printf("doing %s%s\n", bestSrc, bestDst);
-    // assert(TT[Board.key % TT_ENTRIES].key == Board.key >> 48);
+    // assert(TT[Board.key % TT_ENTRIES].key == KEY_TOP(Board.key));
     int eval = SCORE(TT[Board.key % TTEntries].scoreBound); // TODO: Explicitly cast this to int16_t 
     int trueEval = Board.side == WHITE ? eval : -eval;
     // printf("%d, %d, %d\n", TT[Board.key % TT_ENTRIES].scoreBound, eval, trueEval);
