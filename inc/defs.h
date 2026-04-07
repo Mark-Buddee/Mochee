@@ -8,7 +8,7 @@
 #define NAME_DESC                       "Mother of Chess Engines\nCopyright (C) Chonker Bonker Corporation. All rights reserved."
 #define AUTHOR                          "Buddee890"
 
-#define STREAM_BUFF_SIZE                1024
+#define STREAM_BUFF_SIZE                8191 // 24 + 5*max_game_plys < stream_buff_size
 #define BUFF_SIZE                       255
 
 #define START_FEN                       "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
