@@ -165,7 +165,7 @@ void print_variation(Board_s* const Board, int maxDepth) {
 
 void print_move(Move move) {
     if(move == NULL_MOVE) {
-        printf("0000");
+        printf("a1a1 ");
         return;
     }
 

@@ -7,15 +7,20 @@
 #include "tt.h"
 
 void init_pawn_attacks(void) {
+
     for(int side = WHITE; side < NUM_SIDES; side++)
         for(int sq = A1; sq <= H8; sq++)
             pawn_attacks[side][sq] = side == WHITE ? shift(BIT(sq), NORTH_WEST) | shift(BIT(sq), NORTH_EAST)
                                                    : shift(BIT(sq), SOUTH_WEST) | shift(BIT(sq), SOUTH_EAST);
+
 }
 
 void init_pseudo_attacks(void) {
+
     for(int sq = A1; sq <= H8; sq++) {
+
         U64 bit = BIT(sq);
+        
         pseudo_attacks[EMPTY ][sq] = 0;
         pseudo_attacks[PAWN  ][sq] = pawn_attacks[WHITE][sq] | pawn_attacks[BLACK][sq];
         pseudo_attacks[KNIGHT][sq] = shift(bit, NORTH+NORTH_EAST)
@@ -37,10 +42,14 @@ void init_pseudo_attacks(void) {
                                    | shift(bit, SOUTH_EAST)
                                    | shift(bit, SOUTH_WEST)
                                    | shift(bit, SOUTH);
+
+                                   
     }       
+
 }
 
 void init_castling_to(void) {
+    
     for(int i = 0; i < NUM_CASTLING; i++)
         castling_to[i] = 0;
 
@@ -48,9 +57,11 @@ void init_castling_to(void) {
     castling_to[WHITE_OOO] = C1;
     castling_to[BLACK_OO]  = G8;
     castling_to[BLACK_OOO] = C8;
+
 }
 
 void init_castling_path(void) {
+
     for(int i = 0; i < NUM_CASTLING; i++)
         castling_path[i] = 0;
 
@@ -58,9 +69,11 @@ void init_castling_path(void) {
     castling_path[WHITE_OOO] = BIT(D1) | BIT(C1) | BIT(B1);
     castling_path[BLACK_OO]  = BIT(F8) | BIT(G8);
     castling_path[BLACK_OOO] = BIT(D8) | BIT(C8) | BIT(B8);
+
 }
 
 void init_rook_src(void) {
+
     for(int i = 0; i < NUM_CASTLING; i++)
         rook_src[i] = 0;
 
@@ -68,9 +81,11 @@ void init_rook_src(void) {
     rook_src[WHITE_OOO] = A1;
     rook_src[BLACK_OO]  = H8;
     rook_src[BLACK_OOO] = A8;
+
 }
 
 void init_rook_dst(void) {
+
     for(int i = 0; i < NUM_CASTLING; i++)
         rook_dst[i] = 0;
 
@@ -78,9 +93,11 @@ void init_rook_dst(void) {
     rook_dst[WHITE_OOO] = D1;
     rook_dst[BLACK_OO]  = F8;
     rook_dst[BLACK_OOO] = D8;
+
 }
 
 void init_corner_to_castle(void) {
+
     for(int sq = A1; sq <= H8; sq++)
         corner_to_castle[sq] = 0;
 
@@ -88,69 +105,101 @@ void init_corner_to_castle(void) {
     corner_to_castle[H1] = WHITE_OO;
     corner_to_castle[A8] = BLACK_OOO;
     corner_to_castle[H8] = BLACK_OO;
+
 }
 
 void init_enp_sq(void) {
+
     for(int sq = A1; sq <= H8; sq++)
         enp_sq[sq] = BIT(sq) & RANK_4BB ? BIT(sq + SOUTH) :
                      BIT(sq) & RANK_5BB ? BIT(sq + NORTH) :
                      0;
+
 }
 
 void init_enp_cpt(void) {
+
     for(int sq = A1; sq <= H8; sq++)
         enp_cpt[sq] = BIT(sq) & RANK_3BB ? sq + NORTH :
                       BIT(sq) & RANK_6BB ? sq + SOUTH :
                       0; 
+
 }
 
 void init_lines(U64* lines) {
+
     int i = 0;
     U64 tLine;
 
     // Diagonal lines towards north-east
     tLine = 0x8040201008040201; // A1 - H8
+
     for(int j = 0; j < 8; j++) {
+
         U64 tLineNorth = tLine;
         U64 tLineEast  = tLine;
+
         for(int k = 0; k < j; k++) {
+
             tLineNorth = shift(tLineNorth, NORTH);
             tLineEast  = shift(tLineEast,  EAST);
+
         }
+
         lines[i++] = tLineNorth;
+
         if(j) lines[i++] = tLineEast;
+
     }
 
     // Diagonal lines towards south-east
     tLine = 0x0102040810204080; // A8 - H1
+
     for(int j = 0; j < 8; j++) {
+
         U64 tLineNorth = tLine;
         U64 tLineWest  = tLine;
+
         for(int k = 0; k < j; k++) {
+
             tLineNorth = shift(tLineNorth, NORTH);
             tLineWest  = shift(tLineWest,  WEST);
+
         }
+
         lines[i++] = tLineNorth;
+
         if(j) lines[i++] = tLineWest;
     }
 
     // Vertical lines
     tLine = FILE_ABB;
+
     for(int j = 0; j < NUM_FILES; j++) {
+
         U64 tLineEast = tLine;
+
         for(int k = 0; k < j; k++)
             tLineEast = shift(tLineEast, EAST);
+
         lines[i++] = tLineEast;
+
     }
 
     // Horizontal lines
     tLine = RANK_1BB;
+
     for(int j = 0; j < NUM_RANKS; j++) {
+
         U64 tLineNorth = tLine;
+
         for(int k = 0; k < j; k++)
             tLineNorth = shift(tLineNorth, NORTH);
+
         lines[i++] = tLineNorth;
+
     }
+
 }
 
 void init_line(void) {
@@ -218,6 +267,7 @@ void init_between(void) {
 }
 
 void init_all(void) {
+
     init_pawn_attacks();
     init_pseudo_attacks();
     init_castling_to();
@@ -227,10 +277,13 @@ void init_all(void) {
     init_corner_to_castle();
     init_enp_sq();
     init_enp_cpt();
+    
     init_line(); // must come before init_between
     init_between();
 
     init_magic();
     init_zobrist();
+    
     init_tt();
+
 }

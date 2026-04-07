@@ -24,15 +24,25 @@ int is_three_fold(Board_s* Board, int rootPly) {
     // Repeition is possible only after at least 4 plies
     // Only look 4, 6, 8, ... plies in the past where the player to move was the same as right now
     // until the last irreversible move (pawn move or capture)
+    // int posFreq = 0;
+    // for(int curPly = Board->hisPly - 4; curPly >= Board->hisPly - Board->hundredPly; curPly -= 2) {
+
+    //     // int inSearch = curPly > rootPly; // are we currently searching this position?
+    //     // int inSearch = 0;
+    //     int keyMatch = Board->Undos[curPly].key == Board->key; // does the position match?
+    //     if(keyMatch) return 1;
+
+    //     // if(keyMatch && ++posFreq + inSearch == 2) return 1; // found a two-fold repetition in the search or a three-fold overall
+
+    // }
+
+    (void)rootPly;
     int posFreq = 0;
     for(int curPly = Board->hisPly - 4; curPly >= Board->hisPly - Board->hundredPly; curPly -= 2) {
 
-        // int inSearch = curPly > rootPly; // are we currently searching this position?
-        // int inSearch = 0;
         int keyMatch = Board->Undos[curPly].key == Board->key; // does the position match?
-        if(keyMatch) return 1;
-
-        // if(keyMatch && ++posFreq + inSearch == 2) return 1; // found a two-fold repetition in the search or a three-fold overall
+        if(keyMatch) posFreq++;
+        if(posFreq == 2) return 1;
 
     }
 
@@ -219,7 +229,10 @@ int quiesce(Board_s* const Board, int alpha, int beta, int rootPly) {
 }
 
 // TODO: change return type to int16_t
-int alpha_beta(Board_s* const Board, int alpha, int beta, int depth, int rootPly, clock_t endTime, Move* rootBestMove) {
+int alpha_beta(Board_s* const Board, int alpha, int beta, int depth, Move* rootBestMove) {
+
+    int rootPly = SearchInfo.ply;
+    clock_t endTime = SearchInfo.endtime;
 
     #ifndef NDEBUG
         nodesSearched++;
@@ -228,76 +241,82 @@ int alpha_beta(Board_s* const Board, int alpha, int beta, int depth, int rootPly
     // TODO: Fix all return values
     // TODO: Fix all calls to alpha_beta
     
-    // Fifty move rule
-    if(Board->hundredPly == HUNDRED_PLIES) return 0;
-    
-    // 3-fold repetition
-    if(is_three_fold(Board, rootPly)) return 0;
-
     Move bestMove = NULL_MOVE;
     int isRootNode = Board->hisPly == rootPly;
     
-    TTEntry_s Entry = TT[Board->key % TTEntries];
-    if(Entry.key == KEY_TOP(Board->key)) {
+    // Fifty move rule
+    if(!isRootNode && Board->hundredPly == HUNDRED_PLIES) return 0;
+    
+    // 3-fold repetition
+    if(!isRootNode && is_three_fold(Board, rootPly)) return 0;
 
-        // int foundMate = IS_PV_NODE(Entry.scoreBound) && abs(SCORE(Entry.scoreBound)) >= INF - MAX_DEPTH;
-        if(Entry.depth >= depth) {
-        // if(Entry.depth >= depth || foundMate) { // sufficient depth or mate score is valid
+    
+    // TTEntry_s Entry = TT[Board->key % TTEntries];
+    // if(Entry.key == KEY_TOP(Board->key)) {
 
-            #ifndef NDEBUG
-                TTStats.hits++;
-            #endif
+    //     // int foundMate = IS_PV_NODE(Entry.scoreBound) && abs(SCORE(Entry.scoreBound)) >= INF - MAX_DEPTH;
+    //     if(Entry.depth >= depth) {
+    //     // if(Entry.depth >= depth || foundMate) { // sufficient depth or mate score is valid
 
-            // if(isRootNode) assert(Entry.move != NULL_MOVE);
+    //         #ifndef NDEBUG
+    //             TTStats.hits++;
+    //         #endif
 
-            if(IS_PV_NODE(Entry.scoreBound)) {
-                assert(!isRootNode || Entry.move != NULL_MOVE);
-                if (isRootNode) *rootBestMove = Entry.move;
-                if(!isRootNode && (SCORE(Entry.scoreBound) < beta || SCORE(Entry.scoreBound) > alpha)) {
-                    return SCORE(Entry.scoreBound); // exact score
-                }
-            } else if(IS_CUT_NODE(Entry.scoreBound) && SCORE(Entry.scoreBound) >= beta) {
-                assert(!isRootNode || Entry.move != NULL_MOVE);
-                assert(!isRootNode);
-                // if(isRootNode) *rootBestMove = Entry.move;
-                return beta; // lower bound exceeds beta
-            } else if(IS_ALL_NODE(Entry.scoreBound) && SCORE(Entry.scoreBound) <= alpha) {
-                assert(!isRootNode || Entry.move != NULL_MOVE);
-                assert(!isRootNode);
-                // if(isRootNode) *rootBestMove = Entry.move;
-                return alpha; // upper bound is below alpha
-            }
+    //         // if(isRootNode) assert(Entry.move != NULL_MOVE);
 
-        }
-        bestMove = Entry.move;
+    //         if(IS_PV_NODE(Entry.scoreBound)) {
+    //             assert(!isRootNode || Entry.move != NULL_MOVE);
+    //             if (isRootNode) *rootBestMove = Entry.move;
+    //             if(!isRootNode && (SCORE(Entry.scoreBound) < beta || SCORE(Entry.scoreBound) > alpha)) {
+    //                 return SCORE(Entry.scoreBound); // exact score
+    //             }
+    //         } else if(IS_CUT_NODE(Entry.scoreBound) && SCORE(Entry.scoreBound) >= beta) {
+    //             assert(!isRootNode || Entry.move != NULL_MOVE);
+    //             assert(!isRootNode);
+    //             // if(isRootNode) *rootBestMove = Entry.move;
+    //             return beta; // lower bound exceeds beta
+    //         } else if(IS_ALL_NODE(Entry.scoreBound) && SCORE(Entry.scoreBound) <= alpha) {
+    //             assert(!isRootNode || Entry.move != NULL_MOVE);
+    //             assert(!isRootNode);
+    //             // if(isRootNode) *rootBestMove = Entry.move;
+    //             return alpha; // upper bound is below alpha
+    //         }
 
-    }
+    //     }
+    //     bestMove = Entry.move;
+
+    // }
 
     assert(depth >= 0);
     // Add quiesce entry to TT
-    if(depth == 0) return quiesce(Board, alpha, beta, rootPly);
-    // if(depth == 0) return Board->side == WHITE ? Board->staticEval : -Board->staticEval;
+    // if(depth == 0) return quiesce(Board, alpha, beta, rootPly);
+    if(depth == 0) {
+        int r = Board->side == WHITE ? Board->staticEval : -Board->staticEval;
+        return clamp(-INF, INF, r);
+    }
 
     Move_s List[MAX_MOVES];
     Move_s* cur = List;
     Move_s* end = gen_legal(Board, List);
 
-    // if(cur == end) return Board->checkers ? -INF + (Board->hisPly - rootPly) : 0;
-    if(cur == end) {
-        if(Board->checkers) {
-            add_entry(Board->key, NULL_MOVE, SCOREBOUND(-INF + (Board->hisPly - rootPly), PV_NODE), 0, rootPly); // This is probably a waste of time
-            return -INF + (Board->hisPly - rootPly); // checkmate
-        }
-        add_entry(Board->key, NULL_MOVE, SCOREBOUND(0, PV_NODE), 0, rootPly); // This is probably a waste of time
-        return 0; // stalemate
-    }
+    if(cur == end) return Board->checkers ? -INF + (Board->hisPly - rootPly) : 0;
+    // if(cur == end) {
+    //     if(Board->checkers) {
+    //         add_entry(Board->key, NULL_MOVE, SCOREBOUND(-INF + (Board->hisPly - rootPly), PV_NODE), 0, rootPly); // This is probably a waste of time
+    //         // printf("returning mate score of %d where INF = %d\n", -INF + (Board->hisPly - rootPly), INF);
+    //         // printf("converted to int16_t: %d\n", (int16_t)(-INF + (Board->hisPly - rootPly)));
+    //         return -INF + (Board->hisPly - rootPly); // checkmate
+    //     }
+    //     add_entry(Board->key, NULL_MOVE, SCOREBOUND(0, PV_NODE), 0, rootPly); // This is probably a waste of time
+    //     return 0; // stalemate
+    // }
 
-    // If only one legal move, no need to search further
-    if(isRootNode && (end - cur) == 1) {
-        add_entry(Board->key, cur->move, SCOREBOUND(0, PV_NODE), 0, rootPly); // This is probably a waste of time
-        *rootBestMove = cur->move;
-        return 0; // TODO: Evaluate properly
-    }
+    // // If only one legal move, no need to search further
+    // if(isRootNode && (end - cur) == 1) {
+    //     add_entry(Board->key, cur->move, SCOREBOUND(0, PV_NODE), 0, rootPly); // This is probably a waste of time
+    //     *rootBestMove = cur->move;
+    //     return 0; // TODO: Evaluate properly
+    // }
 
     score_moves(Board, List, end, bestMove);
     partial_insertion_sort(List, end, INSERTION_SORT_MIN);
@@ -309,12 +328,26 @@ int alpha_beta(Board_s* const Board, int alpha, int beta, int depth, int rootPly
     
     int nodeType = ALL_NODE;
     while(1) {
-
+        
         do_move(Board, cur);
-        int score = -alpha_beta(Board, -beta, -alpha, depth - 1, rootPly, endTime, rootBestMove);
+        int score = -alpha_beta(Board, -beta, -alpha, depth - 1, rootBestMove);
         undo_move(Board);
-
         assert(abs(score) <= INF); // possible but unlikely for this condition to be broken. Can be fixed by hardcapping evaluation scores
+        
+        // Timeout
+        // if(clock() > endTime && (depth > 1 || *rootBestMove != NULL_MOVE)) {
+        if(clock() >= endTime) {
+    
+            assert(*rootBestMove != NULL_MOVE); // TODO: This instead of the above second half of condition
+            assert(bestMove != NULL_MOVE);
+    
+            if(nodeType == PV_NODE) add_entry(Board->key, bestMove, SCOREBOUND(alpha, CUT_NODE), depth, rootPly); // save lower bounds where possible
+            
+            // if(isRootNode) return alpha;
+            
+            return beta; // don't searching siblings
+        
+        }
 
         // Beta cutoff
         if(score >= beta) {
@@ -338,20 +371,6 @@ int alpha_beta(Board_s* const Board, int alpha, int beta, int depth, int rootPly
         cur++;
         if(cur == end) break; // all children searched
 
-        // Timeout
-        // if(clock() > endTime && (depth > 1 || *rootBestMove != NULL_MOVE)) {
-        if(clock() >= endTime) {
-
-            assert(*rootBestMove != NULL_MOVE); // TODO: This instead of the above second half of condition
-            assert(bestMove != NULL_MOVE);
-
-            if(nodeType == PV_NODE) add_entry(Board->key, bestMove, SCOREBOUND(alpha, CUT_NODE), depth, rootPly); // save lower bounds where possible
-            
-            // if(isRootNode) return alpha;
-            
-            return beta; // don't searching siblings
-        
-        }
     }
 
     if(isRootNode && nodeType != PV_NODE) return alpha; // Fail low
@@ -386,8 +405,8 @@ void do_search(Board_s* const Board, int depth) {
         // else if(i == 15) goingToBeRealScore = 28;
         
         start = clock();
-        alpha_beta(Board, -INF, INF, i, Board->hisPly, endTime, &bestMove);
-        // alpha_beta(Board, goingToBeRealScore-50, goingToBeRealScore+50, i, Board->hisPly, endTime, &bestMove);
+        alpha_beta(Board, -INF, INF, i, &bestMove);
+        // alpha_beta(Board, goingToBeRealScore-50, goingToBeRealScore+50, i, &bestMove);
         end = clock();
         double dt = (double)(end-start) / CLOCKS_PER_SEC;
 
@@ -425,8 +444,8 @@ Move iterative_deepening(Board_s* const Board, double maxDuration) {
 
             // printf("Aspiration window for depth %d: [%d, %d]\n", depth, bounds[LOWER], bounds[UPPER]);
             // currentBestMove = NULL_MOVE;
-            // score = alpha_beta(Board, bounds[LOWER], bounds[UPPER], depth, Board->hisPly, endTime, &currentBestMove);
-            score = alpha_beta(Board, -INF, INF, depth, Board->hisPly, endTime, &currentBestMove);
+            // score = alpha_beta(Board, bounds[LOWER], bounds[UPPER], depth, &currentBestMove);
+            score = alpha_beta(Board, -INF, INF, depth, &currentBestMove);
             iterationEndTime = clock();
 
             // assert(score >= bounds[LOWER] && score <= bounds[UPPER]);

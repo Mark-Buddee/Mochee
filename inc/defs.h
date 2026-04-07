@@ -2,6 +2,9 @@
 #define DEFS_H
 
 #include <stdint.h>
+#include <stdatomic.h>
+#include <stdbool.h>
+#include "tinycthread.h"
 
 #define NAME                            "Mochee"
 #define VERSION                         "v1.3"
@@ -16,6 +19,8 @@
 #define MAX_MOVES                       218
 #define MAX_DEPTH                       255
 #define MAX_QUIESCE_DEPTH               -1   // 0 := no quiescient search
+
+#define TIMEOUT                         -1
 
 enum {
     WHITE, BLACK, BOTH,
@@ -59,7 +64,7 @@ enum {
     PROMOTION  = 1 << 14,
     EN_PASSANT = 2 << 14,
     CASTLING   = 3 << 14,
-    NULL_MOVE = 0
+    NULL_MOVE  = 0
 };
 
 enum {
@@ -90,7 +95,7 @@ enum {
 };
 
 // Fifty move rule
-// Chesscom uses 50 moves automatic draw, lichess uses 75 moves automatic draw with the ability for either side to claim a draw after 50 moves
+// Chessc*m uses 50 moves automatic draw, lichess uses 75 moves automatic draw with the ability for either side to claim a draw after 50 moves
 // If I'm playing perfect chess, I can assume the losing side to take a draw after 50 moves
 // Meaning I employ the 50 move draw even though we are playing on lichess
 #define HUNDRED_PLIES                   100 // fifty moves
@@ -138,13 +143,16 @@ typedef uint64_t U64;
 typedef uint16_t Move;
 
 typedef struct {
+
     Move move;
     int materialScore;
     int positionScore;
     int orderingBias;
+
 } Move_s;
 
 typedef struct {
+
     Move move;
     int captured;
     int castlingRights;
@@ -155,9 +163,11 @@ typedef struct {
     U64 kingBlockers[NUM_SIDES];
     int staticEval;
     U64 key;
+
 } Undo_s;
 
 typedef struct {
+
     int side;
     int castlingRights;
     int hundredPly;
@@ -178,9 +188,31 @@ typedef struct {
     int staticEval;
 
     Undo_s Undos[MAX_GAME_PLYS];
+
 } Board_s;
+
+typedef struct {
+
+    int ply;
+    time_t endtime;
+    
+    bool active;
+    bool ponder; // Make atomic so that search can switch from ponder search to normal search
+    bool infinite;
+    atomic_bool stop; // modified by main only, but made atomic to avoid worker thread caching it and not seeing the update
+
+    int depth;
+    int nodes;
+    int mate;
+    int movetime;
+
+    Move searchmoves[MAX_MOVES];
+
+} SearchInfo_s;
 
 static const char PIECE_CHARS[] = ".PNBRQK-.pnbrqk-"; // TODO: get this shit out of here
 extern Board_s Board;
+extern thrd_t thrd;
+extern SearchInfo_s SearchInfo;
 
 #endif

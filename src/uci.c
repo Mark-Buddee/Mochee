@@ -2,6 +2,7 @@
 #include <string.h>
 #include <time.h>
 #include <stdlib.h>
+#include <stdatomic.h>
 #include "uci.h"
 #include "defs.h"
 #include "tt.h"
@@ -13,53 +14,70 @@
 #include "magic.h"
 #include "init.h"
 #include "debug.h"
+#include "worker.h"
 
 static void handle_debug(char* line) {
+
     (void)line;
-    return;
+
 }
 
 static void handle_isready() {
+
     printf("readyok\n");
+
 }
 
 static void handle_setoption(char* line) {
+
     (void)line;
-    return;
+
 }
 
 static void handle_register(char* line) {
+    
     (void)line;
-    return;
+
 }
 
-// position fen fenstr
-// position startpos
-// ... moves e2e4 e7e5 b7b8q
 static void handle_position(char* line) {
+    
+    // position fen fenstr
+    // position startpos
+    // ... moves e2e4 e7e5 b7b8q
 
     char *ptrChar = line;
 
     // char start_fen_s[] = START_FEN;
 
     if(strncmp(line, "startpos", 8) == 0){
+
         Board = board_init(START_FEN);
 
     } else {
+
         ptrChar = strstr(line, "fen");
+
         if(ptrChar == NULL) {
+
             Board = board_init(START_FEN);
+
         } else {
+
             ptrChar+=4;
             Board = board_init(ptrChar);
         }
+
     }
 
 	ptrChar = strstr(line, "moves");
 
 	if(ptrChar != NULL) {
+
         ptrChar += 6;
+
         while(*ptrChar) {
+
             int ppt = get_ppt(ptrChar);
             int src = str2src(ptrChar++);
             int dst = str2src(++ptrChar);
@@ -70,149 +88,166 @@ static void handle_position(char* line) {
             score_moves(&Board, List, end, NULL_MOVE);
 
             while(cur != end) {
+
                 // printf("PPT: %d\n", PPT(cur->move));
+
                 if(SRC(cur->move) == src && DST(cur->move) == dst && PPT(cur->move) == ppt) {
+
                     // move = cur->move;
                     // MoveSToMake->moveVal = move_eval(&Board, MoveSToMake->move);
                     break;
+
                 }
+
                 cur++;
+
             }
+
             if(cur->move == NULL_MOVE) {
+
                 printf("move not found.\n");
                 break;
+
             }
 
             do_move(&Board, cur);
 
             while(*ptrChar && *ptrChar!= ' ' && *ptrChar!= '\n') ptrChar++;
             ptrChar++;
+
         }
+
     }
+
 	// PrintBoard(pos);
+
 }
 
 static void handle_ucinewgame(void) {
+
+    init_tt();
     handle_position("position startpos\n");
-    return;
+
 }
 
-// go movetime 10000
-// go depth 6 wtime 180000 btime 100000 binc 1000 winc 1000 movetime 1000 movestogo 40
+int get_searchtime(int wtime, int btime, int winc, int binc, int movestogo) {
+
+    (void)winc;
+    (void)binc;
+    (void)movestogo;
+
+    int ourtime   = Board.side == WHITE ? wtime : btime;
+    // int theirtime = Board.side == WHITE ? btime : wtime;
+    // int ourinc    = Board.side == WHITE ? winc  : binc;
+    // int theirinc  = Board.side == WHITE ? binc  : winc;
+    // int lead = ourtime - theirtime;
+
+    // int searchtime = 0;
+    // if(lead >= LARGE_LEAD) 
+    //     searchtime = ourtime >= RAPID ? RAPID_MAX
+    //                : ourtime >= BLITZ ? BLITZ_MAX
+    //                :                    BULLET_MAX;
+
+    // else if(lead >= LEAD)
+    //     searchtime = ourtime >= RAPID ? RAPID_STANDARD
+    //                : ourtime >= BLITZ ? BLITZ_STANDARD
+    //                :                    BULLET_STANDARD;
+
+    // else if(ourtime >= DANGER_TIME && ((theirtime - 60000)*3/8 + 15000 <= ourtime))
+    //     searchtime = ourtime >= RAPID ? RAPID_RUSH
+    //                : ourtime >= BLITZ ? BLITZ_RUSH
+    //                :                    BULLET_RUSH;
+
+    // else if(ourtime >= INSTANT_TIME && ((theirtime - 60000)*2/8 + 7500 <= ourtime))
+    //     searchtime = DANGER;
+
+    // else 
+        // searchtime = ourtime / 50;
+
+    // printf("duration: %d\n", duration);
+
+    // return searchtime;
+
+    return ourtime / 50;
+}
+
 static void handle_go(char* line) {
 
-	// int depth = -1, movestogo = 30;
-	// int wtime = -1, btime = -1, winc = 0, binc = 0;
-    int movetime = -1;
+    // End previous search if there is one
+    if(SearchInfo.active) {
+        
+        atomic_store(&SearchInfo.stop, true); // change this once pondering is implemented
+        thrd_join(thrd, NULL);
+        SearchInfo.active = false;
+        
+    }
+
+    // Parse go command
     char *ptr = NULL;
-    int ourTime = 0;
-    int theirTime = 0;
-    // int ourInc = 0;
-    // int theirInc = 0;
-	// info->timeset = FALSE;
-
-	// if ((ptr = strstr(line,"infinite"))) {
-	// 	;
-	// }
-
-	// if ((ptr = strstr(line,"winc"))) {
-	// 	if(Board.side == WHITE) ourInc = atoi(ptr + 5);
-    //     else theirInc = atoi(ptr + 5);
-	// }
-
-	// if ((ptr = strstr(line,"binc"))) {
-	// 	if(Board.side == WHITE) theirInc = atoi(ptr + 5);
-    //     else ourInc = atoi(ptr + 5);
-	// }
-
-	if ((ptr = strstr(line,"wtime"))) {
-		if(Board.side == WHITE) ourTime = atoi(ptr + 6);
-        else theirTime = atoi(ptr + 6);
-	}
-
-	if ((ptr = strstr(line,"btime"))) {
-		if(Board.side == WHITE) theirTime = atoi(ptr + 6);
-        else ourTime = atoi(ptr + 6);
-	}
-
-	// if ((ptr = strstr(line,"movestogo"))) {
-	// 	movestogo = atoi(ptr + 10);
-	// }
-
-	if ((ptr = strstr(line,"movetime"))) {
-		movetime = atoi(ptr + 9);
-	}
-
-	// if ((ptr = strstr(line,"depth"))) {
-	// 	depth = atoi(ptr + 6);
-	// }
-
-	// if(movetime != -1) {
-	// 	time = movetime;
-	// 	movestogo = 1;
-	// }
-
-	// info->starttime = GetTimeMs();
-	// info->depth = depth;
-
-	// if(time != -1) {
-	// 	info->timeset = TRUE;
-	// 	time /= movestogo;
-	// 	time -= 50;
-	// 	info->stoptime = info->starttime + time + inc;
-	// }
-
-	// if(depth == -1) {
-	// 	info->depth = MAXDEPTH;
-	// }
-
-	// printf("time:%d start:%d stop:%d depth:%d timeset:%d\n",
-	// 	time,info->starttime,info->stoptime,info->depth,info->timeset);
-    int diff = ourTime - theirTime;
-    double duration;
-
-    if(diff >= LARGE_LEAD) 
-        duration = ourTime >= RAPID ? RAPID_MAX
-                 : ourTime >= BLITZ ? BLITZ_MAX
-                 :                    BULLET_MAX;
-    else if(diff >= LEAD)
-        duration = ourTime >= RAPID ? RAPID_STANDARD
-                 : ourTime >= BLITZ ? BLITZ_STANDARD
-                 :                    BULLET_STANDARD;
-    else if(ourTime >= DANGER_TIME && ((theirTime - 60000)*3/8 + 15000 <= ourTime))
-        duration = ourTime >= RAPID ? RAPID_RUSH
-                 : ourTime >= BLITZ ? BLITZ_RUSH
-                 :                    BULLET_RUSH;
-    else if(ourTime >= INSTANT_TIME && ((theirTime - 60000)*2/8 + 7500 <= ourTime))
-        duration = DANGER;
-    else 
-        duration = ourTime / 50.0;
-
-    if(movetime != -1) duration = movetime;
-
-    // printf("duration: %g\n", duration);
-    #ifndef NDEBUG
-        // printf("ourTime: %d theirTime: %d maximum moveTime: %g\n", ourTime, theirTime, duration);
-    #endif
     
-	Move bestMove = iterative_deepening(&Board, duration);
-    printf("info depth 2 score cp 214 time 1242 nodes 2124 nps 34928 pv e2e4 e7e5 g1f3\n");
-    printf("bestmove ");
-    print_move(bestMove);
-    printf("\n");
-    // inc_age();
+    ptr = strstr(line,"wtime");
+    int wtime     = ptr ? atoi(ptr + 6)  : 0;
+    ptr = strstr(line,"btime");
+    int btime     = ptr ? atoi(ptr + 6)  : 0;
+    ptr = strstr(line,"winc");
+    int winc      = ptr ? atoi(ptr + 5)  : 0;
+    ptr = strstr(line,"binc");
+    int binc      = ptr ? atoi(ptr + 5)  : 0;
+    ptr = strstr(line,"movestogo");
+    int movestogo = ptr ? atoi(ptr + 10) : -1;
+    ptr = strstr(line,"depth");
+    int depth     = ptr ? atoi(ptr + 6)  : -1;
+    ptr = strstr(line,"nodes");
+    int nodes     = ptr ? atoi(ptr + 6)  : -1;
+    ptr = strstr(line,"mate");
+    int mate      = ptr ? atoi(ptr + 5)  : -1;
+    ptr = strstr(line,"movetime");
+    int movetime  = ptr ? atoi(ptr + 9)  : -1;
+    
+    bool ponder   = strstr(line,"ponder")   ? true : false;
+    bool infinite = strstr(line,"infinite") ? true : false;
+    
+    Move searchmoves[MAX_MOVES] = {NULL_MOVE}; // Not implemented yet
+    int num_searchmoves = 0;
+
+    // Start worker thread
+    SearchInfo.ply        = Board.hisPly;
+    SearchInfo.endtime    = clock() + (long)(get_searchtime(wtime, btime, winc, binc, movestogo) * CLOCKS_PER_SEC) / 1000;
+
+    SearchInfo.active     = true;
+    atomic_store(&SearchInfo.stop, false);
+    
+    SearchInfo.ponder     = ponder;
+    SearchInfo.infinite   = infinite;
+    SearchInfo.depth      = depth;
+    SearchInfo.nodes      = nodes;
+    SearchInfo.mate       = mate;
+    SearchInfo.movetime   = movetime;
+
+    memcpy(SearchInfo.searchmoves, searchmoves, num_searchmoves * sizeof(Move));
+
+    // thread_func(NULL);
+    thrd_create(&thrd, thread_func, NULL);
+
 }
 
 static void handle_stop(void) {
-    return;
+
+    atomic_store(&SearchInfo.stop, true);
+    
+    if(SearchInfo.active) {
+
+        thrd_join(thrd, NULL);
+        SearchInfo.active = false;
+
+    }
+
 }
 
 static void handle_ponderhit(void) {
-    return;
-}
 
-static void handle_quit(void) {
     return;
+
 }
 
 void uci(void) {
@@ -240,9 +275,8 @@ void uci(void) {
         else if (!strncmp(line, "go",          2)) handle_go(line + 3);
         else if (!strncmp(line, "stop",        4)) handle_stop();
         else if (!strncmp(line, "ponderhit",   9)) handle_ponderhit();
-        else if (!strncmp(line, "quit",        4)) {
-            handle_quit();
-            break;
-        }
+        else if (!strncmp(line, "quit",        4)) break;
+
     }
+
 }

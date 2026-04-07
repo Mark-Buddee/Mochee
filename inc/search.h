@@ -24,10 +24,16 @@
 #define MAX_QUIET_CHECK_PLIES 1 // quiet checks are allowed within the first X plies of quiesce
 
 int clamp(int lower, int upper, int score);
-int alpha_beta(Board_s* const Board, int alpha, int beta, int depth, int rootPly, clock_t endTime, Move* rootBestMove);
+int alpha_beta(Board_s* const Board, int alpha, int beta, int depth, Move* rootBestMove);
 void do_search(Board_s* const Board, int depth);
 void score_moves(Board_s* Board, Move_s* cur, Move_s* end, Move bestMove);
 Move iterative_deepening(Board_s* const Board, double maxDuration);
 void get_aspiration_window(int prevScores[], int depth, int* lower, int* upper);
+
+int is_three_fold(Board_s* Board, int rootPly);
+
+void partial_insertion_sort(Move_s* begin, Move_s* end, int limit);
+
+int quiesce(Board_s* const Board, int alpha, int beta, int rootPly);
 
 #endif

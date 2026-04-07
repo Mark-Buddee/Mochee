@@ -87,7 +87,7 @@ int static_eval(const Board_s* const Board) {
         srcs = piece(Board, KING, side);
         while(srcs) {
             int src = pop_lsb(&srcs);
-            side_eval += KING_VAL;
+            // side_eval += KING_VAL;
             side_eval += king_psqt[side][src];
         }
 

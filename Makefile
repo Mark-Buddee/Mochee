@@ -8,7 +8,7 @@ RM      := del /Q /S
 # or pass them via CLI: mingw32-make DEBUG=1
 # --------------------------------------------
 # RELEASE     ?= 1
-PROFILE     ?= 1
+# PROFILE     ?= 1
 # PROFILE_USE ?= 1
 # SANITIZE    ?= 1
 # FAST_MATH   ?= 1
