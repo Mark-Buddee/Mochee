@@ -1,73 +1,77 @@
-# --- COMPILER & TOOLS ---
-CC      := gcc
-MKDIR   := powershell -Command New-Item -ItemType Directory -Force
-RM      := del /Q /S
+# make            -> debug build (default)
+# make release    -> release build (PGO + LTO + O3)
+# make clean      -> nuke build artifacts
+#
+# needs a posix-ish shell (msys2 ucrt64, git bash, linux, macos)
 
-# --- FREQUENT TOGGLES ---
-# Uncomment these lines to enable them by default, 
-# or pass them via CLI: mingw32-make DEBUG=1
-# --------------------------------------------
-# RELEASE     ?= 1
-# PROFILE     ?= 1
-# PROFILE_USE ?= 1
-# SANITIZE    ?= 1
-# FAST_MATH   ?= 1
+# build debug as default
+BUILD ?= debug
 
-CFLAGS := -march=native -flto -fdiagnostics-color=always
+ifeq ($(filter $(BUILD),debug release),)
+    $(error Invalid BUILD '$(BUILD)' - must be 'debug' or 'release')
+endif
 
-# --- Logic for Toggles ---
-ifdef RELEASE
-    CFLAGS += -O3 -DNDEBUG
+CC      ?= gcc
+MKDIR   := mkdir -p
+RM      := rm -rf
+
+REQUIRED_TOOLS := $(CC)
+
+# add .exe extension on windows
+EXE_EXT := $(if $(filter Windows_NT,$(OS)),.exe,)
+TARGET  := mochee$(EXE_EXT)
+
+BUILD_DIR   := build
+PROFILE_DIR := $(BUILD_DIR)/profile_data
+
+INCLUDES := -Iinc -Ideps/tinycthread
+WFLAGS   := -Wall -Wextra -Wunused
+LIBS     := -lm
+
+SOURCES := $(wildcard src/*.c) $(wildcard deps/tinycthread/*.c)
+
+CFLAGS := -fdiagnostics-color=always
+
+ifeq ($(BUILD),release)
+    CFLAGS += -march=native -flto -O3 -DNDEBUG
 else
     CFLAGS += -g -O0
 endif
 
-ifdef PROFILE
-    CFLAGS += -fprofile-generate -fprofile-dir=build/profile_data
-endif
+.PHONY: all debug release clean build_dir check_tools
 
-ifdef PROFILE_USE
-	CFLAGS += -fprofile-use -fprofile-dir=build/profile_data
-endif
+all: check_tools build_dir $(TARGET)
 
-ifdef SANITIZE
-    CFLAGS += -fsanitize=address -fsanitize=undefined
-endif
+debug:
+	@$(MAKE) BUILD=debug all
 
-ifdef FAST_MATH
-    CFLAGS += -ffast-math
-endif
+release:
+	@$(MAKE) BUILD=release all
 
-# --- WARNINGS & STANDARDS ---
-WFLAGS  := -Wall -Wextra -Wunused
-
-# --- INCLUDES & SEARCH PATHS ---
-INCLUDES := -Iinc -Ideps/tinycthread
-
-# --- FILES ---
-SOURCES := $(wildcard src/*.c) $(wildcard deps/tinycthread/*.c)
-TARGET  := mochee.exe
-
-# --- LINKING ---
-LIBS    := -lm
-
-# --- RULES ---
-
-all: build_dir $(TARGET)
+# check prerequisites first
+check_tools:
+	@for tool in $(REQUIRED_TOOLS); do \
+		command -v $$tool >/dev/null 2>&1 || { \
+			echo "Error: required tool '$$tool' not found on PATH."; \
+			exit 1; \
+		}; \
+	done
 
 build_dir:
-	@if not exist "build\profile_data" $(MKDIR) "build\profile_data" > nul
+	@$(MKDIR) "$(PROFILE_DIR)"
 
+# release = two-pass PGO build: compile with instrumentation, run a bench to gather profile data, then recompile using that data
+ifeq ($(BUILD),release)
+$(TARGET): $(SOURCES)
+	$(CC) $(CFLAGS) -fprofile-generate -fprofile-dir=$(PROFILE_DIR) \
+	    $(WFLAGS) $(INCLUDES) $(SOURCES) -o $(TARGET) $(LIBS)
+	./$(TARGET) bench
+	$(CC) $(CFLAGS) -fprofile-use -fprofile-correction -fprofile-dir=$(PROFILE_DIR) \
+	    $(WFLAGS) $(INCLUDES) $(SOURCES) -o $(TARGET) $(LIBS)
+else
 $(TARGET): $(SOURCES)
 	$(CC) $(CFLAGS) $(WFLAGS) $(INCLUDES) $(SOURCES) -o $(TARGET) $(LIBS)
-
-clean:
-	@if exist $(TARGET) $(RM) $(TARGET)
-ifdef PROFILE
-	@echo "Profile flag detected: Clearing build directory..."
-	@if exist "build" rd /S /Q "build"
-else
-	@echo "Profile flag NOT set: Preserving build directory."
 endif
 
-.PHONY: all clean build_dir
+clean:
+	@$(RM) $(TARGET) $(BUILD_DIR)
