@@ -203,6 +203,7 @@ void init_lines(U64* lines) {
 }
 
 void init_line(void) {
+
     for(int sq1 = A1; sq1 <= H8; sq1++)
         for(int sq2 = A1; sq2 <= H8; sq2++)
             line[sq1][sq2] = 0;
@@ -212,55 +213,82 @@ void init_line(void) {
 
     for(int sq1 = A1; sq1 <= H8; sq1++) {
         for(int sq2 = A1; sq2 <= H8; sq2++) {
+
             if(sq1 == sq2) continue;
+
             U64 bit1 = BIT(sq1);
             U64 bit2 = BIT(sq2);
+
             for(int k = 0; k < NUM_LINES; k++) {
+
                 if(lines[k] & bit1 && lines[k] & bit2) {
+
                     line[sq1][sq2] = lines[k];
                     break;
+
                 }
+
             }
+
         }
     }
+
 }
 
 void init_between(void) {
+
     for(int sq1 = A1; sq1 <= H8; sq1++)
         for(int sq2 = A1; sq2 <= H8; sq2++)
             between[sq1][sq2] = 0;
 
     for(int sq1 = A1; sq1 <= H8; sq1++) {
         for(int sq2 = A1; sq2 <= H8; sq2++) {
+
             if(!line[sq1][sq2]) {
+
                 between[sq1][sq2] = BIT(sq2);
                 continue;
+
             }
+
             U64 bb = line[sq1][sq2];
             U64 endpoints = BIT(sq1) | BIT(sq2);
             U64 cutoff;
 
             cutoff = RANK_8BB;
             while(!(cutoff & endpoints)) {
+
                 bb &= ~cutoff;
                 cutoff = shift(cutoff, SOUTH);
+
             }
+
             cutoff = RANK_1BB;
             while(!(cutoff & endpoints)) {
+
                 bb &= ~cutoff;
                 cutoff = shift(cutoff, NORTH);
+
             }
+
             cutoff = FILE_ABB;
             while(!(cutoff & endpoints)) {
+
                 bb &= ~cutoff;
                 cutoff = shift(cutoff, EAST);
+
             }
+
             cutoff = FILE_HBB;
             while(!(cutoff & endpoints)) {
+
                 bb &= ~cutoff;
                 cutoff = shift(cutoff, WEST);
+
             }
+
             between[sq1][sq2] = bb & ~(BIT(sq1));
+            
         }
     }
     
