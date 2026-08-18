@@ -101,7 +101,7 @@ int bench_iterative_deepening(Board_s* const Board, int d, Move* rootBestMove) {
     for(int depth = 1; depth <= d; depth++) {
         
         Move currentBestMove = NULL_MOVE;
-        int currentScore = mock_alpha_beta(Board, -INF, INF, depth, &currentBestMove);
+        int currentScore = alpha_beta(Board, -INF, INF, depth, &currentBestMove);
 
         assert(currentBestMove != NULL_MOVE);
 
