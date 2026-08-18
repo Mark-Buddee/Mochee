@@ -46,22 +46,29 @@ static void print_version(void) {
 
 }
 
-int main(void) {
+int main(int argc, char *argv[]) {
 
-	unsigned long long TT_SIZE_MB = 64ULL;
-	unsigned long long bytes = TT_SIZE_MB * 1024ULL * 1024ULL;
-
-	TTEntries = bytes / sizeof(TTEntry_s);
+	unsigned long long TT_SIZE_MB = 64;
+	TTEntries = (TT_SIZE_MB * 1024ULL * 1024ULL) / sizeof(TTEntry_s);
 	TT = malloc(TTEntries * sizeof(TTEntry_s));
 
-    if (!TT) {
+	if (!TT) {
 
-        fprintf(stderr, "Failed to allocate transposition table!\n");
-        return 1;
+		fprintf(stderr, "Failed to allocate transposition table!\n");
+		return 1;
 
-    }
+	}
 
-	// printf("TTEntries: %llu\n", TT_ENTRIES);
+	// Check for bench argument
+	if(argc > 1 && !strncmp(argv[1], "bench", 5)) {
+
+		init_all();
+		bench();
+		return 0;
+
+	}
+
+	// printf("TTEntries: %llu\n", TTEntries);
 	// printf("TT intended entries: %llu\n", TTEntries);
 	// printf("TT actual bytes:     %zu\n", TTEntries * sizeof(TTEntry_s));
 	// printf("TT actual size (MB): %llu\n",
