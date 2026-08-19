@@ -6,9 +6,11 @@
 #define BISHOP_VAL  320
 #define ROOK_VAL    479
 #define QUEEN_VAL   929
-#define INF         8191 // largest unsigned 14 bit number
+#define INF         8191 // largest signed 14 bit number
 #define KING_VAL    INF - MAX_DEPTH
 #define MATE        INF - MAX_DEPTH
+
+#define TIMEOUT     INF + 1
 
 // static const int piece_val[NUM_PIECES] = {
 //     0, 100, 280, 320, 479, 929, 60000

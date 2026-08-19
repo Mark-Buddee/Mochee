@@ -167,6 +167,9 @@ Move_s* gen_pawn_moves(const Board_s* Board, Move_s* List, U64 mask, const int s
 }
 
 Move_s* gen_moves(const Board_s* Board, Move_s* List, const U64 mask, const int side, const int pieceType, const int quietChecks) {
+
+    (void)quietChecks;
+
     U64 srcs = piece(Board, pieceType, side);
 
     while(srcs) {
@@ -183,6 +186,7 @@ Move_s* gen_moves(const Board_s* Board, Move_s* List, const U64 mask, const int 
     }
 
     return List;
+
 }
 
 Move_s* gen_all(const Board_s* Board, Move_s* List, const int side, const int type) {

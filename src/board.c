@@ -151,6 +151,19 @@ void move_piece(Board_s* const Board, const int pieceType, const int src, const 
     Board->key ^= zobrist_square[side][pieceType][dst];
 }
 
+int isLegalMove(const Board_s* const Board, const Move move) {
+
+    // Generate moves
+    Move_s List[MAX_MOVES];
+    Move_s* cur = List;
+    Move_s* end = gen_legal(Board, List);
+    while(cur != end) {
+        if(cur->move == move) return 1;
+        cur++;
+    }
+    return 0;
+}
+
 int isLegal(const Board_s* const Board) {
     int sideToMove = Board->side;
     int notSideToMove = sideToMove == WHITE ? BLACK : WHITE;

@@ -37,6 +37,7 @@ extern U64 zobrist_castle[NUM_CASTLING];
 extern U64 zobrist_enpSq[NUM_SQUARES];
 
 // int is_hit(U64 key);
+int probe_TT(Board_s* const Board, int depth, Move* ttBestMove);
 void add_entry(U64 key, Move bestMove, uint16_t scoreBound, uint8_t depth, int rootPly);
 void init_tt(void);
 

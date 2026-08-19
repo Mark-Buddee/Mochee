@@ -21,6 +21,25 @@ extern unsigned long long tableHits;
 extern unsigned long long tableUpdates;
 extern unsigned long long tableOverwrites;
 
+int probe_TT(Board_s* const Board, int depth, Move* ttBestMove) {
+
+    TTEntry_s CurrentEntry = TT[Board->key % TTEntries];
+
+    if(CurrentEntry.key == KEY_TOP(Board->key)) {
+
+        if(CurrentEntry.depth >= depth) {
+
+            *ttBestMove = CurrentEntry.move;
+            return CurrentEntry.scoreBound;
+
+        }
+
+    }
+
+    return BLANK_NODE;
+
+}
+
 // int is_hit(U64 key) {
 //     TTEntry_s CurrentEntry = TT[key % TT_ENTRIES];
 //     if(CurrentEntry.key == KEY_TOP(key)) return 1;

@@ -20,8 +20,6 @@
 #define MAX_DEPTH                       255
 #define MAX_QUIESCE_DEPTH               -1   // 0 := no quiescient search
 
-#define TIMEOUT                         -1
-
 enum {
     WHITE, BLACK, BOTH,
     NUM_SIDES = 2

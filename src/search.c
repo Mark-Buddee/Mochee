@@ -21,30 +21,29 @@ extern unsigned long long tableOverwriteDepthSum;
 
 int is_three_fold(Board_s* Board, int rootPly) {
 
-    // Repeition is possible only after at least 4 plies
+    int posFreq = 0;
+
+    // Repetition is possible only after at least 4 plies
     // Only look 4, 6, 8, ... plies in the past where the player to move was the same as right now
     // until the last irreversible move (pawn move or capture)
+    for(int curPly = Board->hisPly - 4; curPly >= Board->hisPly - Board->hundredPly; curPly -= 2) {
+
+        int inSearch = curPly > rootPly; // are we currently searching this position?
+        int keyMatch = Board->Undos[curPly].key == Board->key; // does the position match?
+
+        if(keyMatch && ++posFreq + inSearch == 2) return 1; // found a two-fold repetition in the search or a three-fold overall
+
+    }
+
+    // (void)rootPly;
     // int posFreq = 0;
     // for(int curPly = Board->hisPly - 4; curPly >= Board->hisPly - Board->hundredPly; curPly -= 2) {
 
-    //     // int inSearch = curPly > rootPly; // are we currently searching this position?
-    //     // int inSearch = 0;
     //     int keyMatch = Board->Undos[curPly].key == Board->key; // does the position match?
-    //     if(keyMatch) return 1;
-
-    //     // if(keyMatch && ++posFreq + inSearch == 2) return 1; // found a two-fold repetition in the search or a three-fold overall
+    //     if(keyMatch) posFreq++;
+    //     if(posFreq == 2) return 1;
 
     // }
-
-    (void)rootPly;
-    int posFreq = 0;
-    for(int curPly = Board->hisPly - 4; curPly >= Board->hisPly - Board->hundredPly; curPly -= 2) {
-
-        int keyMatch = Board->Undos[curPly].key == Board->key; // does the position match?
-        if(keyMatch) posFreq++;
-        if(posFreq == 2) return 1;
-
-    }
 
     return 0;
 
@@ -83,7 +82,7 @@ void score_moves(Board_s* Board, Move_s* cur, Move_s* end, Move bestMove) {
         }
         if(spc == PROMOTION) orderingBias += PROMOTION_BIAS;
 
-        // TODO: Giving check is good
+        // Giving check is good
         if(Board->checkers) orderingBias += CHECK_BIAS;
         
         cur->positionScore = positionScore;
@@ -187,6 +186,8 @@ int quiesce(Board_s* const Board, int alpha, int beta, int rootPly) {
         }
         cur++;
     }
+
+    (void)raisedAlpha;
 
     // If alpha has been raised, or if all moves have been searched, there is no need to keep searching
     // if(raisedAlpha || Board->checkers) return alpha; // Board->hisPly - startPly < MAX_QUIET_CHECK_PLIES
@@ -382,7 +383,7 @@ int alpha_beta(Board_s* const Board, int alpha, int beta, int depth, Move* rootB
 void do_search(Board_s* const Board, int depth) {
     clock_t start, end;
     printf("    DEPTH  EVAL  TIME(s)  BEST\n");
-    clock_t endTime = clock() + 999999*CLOCKS_PER_SEC;
+    // clock_t endTime = clock() + 999999*CLOCKS_PER_SEC;
     // clock_t endTime = -1;
     for(int i = 1; i <= depth; i++) {
         Move bestMove;

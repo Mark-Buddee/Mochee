@@ -110,11 +110,13 @@ int main(int argc, char *argv[]) {
 	}
 
 	#ifndef NDEBUG
-
-		printf("num hits: %lld, num updates: %lld, num overwrites: %lld\n", TTStats.hits, TTStats.updates, TTStats.overwrites);
-		printf("nodes searched: %llu\n", nodesSearched);
-
+	
+	printf("num hits: %lld, num updates: %lld, num overwrites: %lld\n", TTStats.hits, TTStats.updates, TTStats.overwrites);
+	printf("nodes searched: %llu\n", nodesSearched);
+	
 	#endif
+
+	free(TT);
 
 	return 0;
 }
